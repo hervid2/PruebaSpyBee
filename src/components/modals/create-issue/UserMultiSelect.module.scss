@@ -1,0 +1,157 @@
+@use '@/styles/abstracts/variables' as *;
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: $space-sm;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-xs;
+  min-height: 28px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px $space-sm;
+  border-radius: $radius-full;
+  background: $color-bg-muted;
+  border: 1px solid $color-border;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+}
+
+.chip__remove {
+  display: flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: $color-text-secondary;
+  cursor: pointer;
+  padding: 0;
+  &:hover {
+    color: $color-text-primary;
+  }
+}
+
+.panel {
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-bg-surface;
+  box-shadow: $shadow-sm;
+  overflow: hidden;
+}
+
+.search {
+  padding: $space-sm;
+  border-bottom: 1px solid $color-border;
+
+  input {
+    width: 100%;
+    border: 1px solid $color-border;
+    border-radius: $radius-sm;
+    padding: $space-xs $space-sm;
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+    background: $color-bg-muted;
+    outline: none;
+
+    &:focus {
+      border-color: $color-accent-gold;
+      background: #fff;
+    }
+    &::placeholder {
+      color: $color-text-secondary;
+    }
+  }
+}
+
+.list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.group-label {
+  padding: $space-xs $space-md;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: $color-bg-muted;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: $space-sm;
+  padding: $space-sm $space-md;
+  cursor: pointer;
+  transition: background $transition-fast;
+
+  &:hover {
+    background: $color-bg-muted;
+  }
+  &--selected {
+    background: rgba($color-accent-gold, 0.08);
+  }
+}
+
+.option__avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: $radius-full;
+  object-fit: cover;
+  background: $color-border;
+  flex-shrink: 0;
+}
+
+.option__avatar-placeholder {
+  width: 28px;
+  height: 28px;
+  border-radius: $radius-full;
+  background: $color-accent-gold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  flex-shrink: 0;
+}
+
+.option__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.option__name {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.option__role {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.option__check {
+  color: $color-accent-gold;
+  flex-shrink: 0;
+}
+
+.empty {
+  padding: $space-md;
+  text-align: center;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}

@@ -1,0 +1,86 @@
+import type { UserRef } from '@/domain/models';
+
+export type MockUserWithCompany = UserRef & { company: string; role?: string };
+
+export const MOCK_USERS: MockUserWithCompany[] = [
+  {
+    id: 'c41906bebfbda5a420d7f972',
+    name: 'Mateo Soto',
+    email: 'mateo.soto@constructora.com',
+    avatarUrl: 'https://i.pravatar.cc/150?u=mateo.soto',
+    company: 'CONSTRUCTORA',
+    role: 'Ingeniero Civil',
+  },
+  {
+    id: '61fe1259dad197092ec47bb1',
+    name: 'Felipe Herrera',
+    email: 'felipe.herrera@constructora.com',
+    avatarUrl: 'https://i.pravatar.cc/150?u=felipe.herrera',
+    company: 'CONSTRUCTORA',
+    role: 'Arquitecto',
+  },
+  {
+    id: 'cff0ccd8c7133e33778ba3e7',
+    name: 'Sebastián Castro',
+    email: 'sebastian.castro@constructora.com',
+    avatarUrl: 'https://i.pravatar.cc/150?u=sebastian.castro',
+    company: 'CONSTRUCTORA',
+    role: 'Supervisor',
+  },
+  {
+    id: 'f38568a94102bc8cfb5ccdee',
+    name: 'Nicolás Fernández',
+    email: 'nicolas.fernandez@constructora.com',
+    avatarUrl: 'https://i.pravatar.cc/150?u=nicolas.fernandez',
+    company: 'CONSTRUCTORA',
+    role: 'Residente',
+  },
+  {
+    id: '49f249f1bcbb84e7de053c82',
+    name: 'Valentina Ramírez',
+    email: 'valentina.ramirez@constructora.com',
+    avatarUrl: 'https://i.pravatar.cc/150?u=valentina.ramirez',
+    company: 'CONSTRUCTORA',
+    role: 'Coordinadora',
+  },
+  {
+    id: 'spybee_u1',
+    name: 'Julian Lozano',
+    email: 'julian.lozano@spybee.io',
+    avatarUrl: 'https://i.pravatar.cc/150?u=julian.lozano',
+    company: 'SPYBEE',
+    role: 'Superadmin',
+  },
+  {
+    id: 'spybee_u2',
+    name: 'Julian Rico',
+    email: 'julian.rico@spybee.io',
+    avatarUrl: 'https://i.pravatar.cc/150?u=julian.rico',
+    company: 'SPYBEE',
+    role: 'Desarrollador',
+  },
+  {
+    id: 'spybee_u3',
+    name: 'Ana Gómez',
+    email: 'ana.gomez@spybee.io',
+    avatarUrl: 'https://i.pravatar.cc/150?u=ana.gomez',
+    company: 'SPYBEE',
+    role: 'QA',
+  },
+  {
+    id: 'prueba_u1',
+    name: 'Carlos López',
+    email: 'carlos.lopez@pruebaempresa.com',
+    avatarUrl: 'https://i.pravatar.cc/150?u=carlos.lopez',
+    company: 'PRUEBA EMPRESA',
+    role: 'Inspector',
+  },
+  {
+    id: 'prueba_u2',
+    name: 'María Torres',
+    email: 'maria.torres@pruebaempresa.com',
+    avatarUrl: 'https://i.pravatar.cc/150?u=maria.torres',
+    company: 'PRUEBA EMPRESA',
+    role: 'Directora',
+  },
+];

@@ -1,0 +1,157 @@
+@use '@/styles/abstracts/variables' as *;
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: calc($z-modal + 10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $space-md;
+}
+
+.modal {
+  background: $color-bg-surface;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-lg;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $space-md $space-lg;
+  border-bottom: 1px solid $color-border;
+
+  h3 {
+    font-size: $font-size-md;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    margin: 0;
+  }
+}
+
+.close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: $radius-sm;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: background $transition-fast;
+
+  &:hover {
+    background: $color-bg-muted;
+  }
+}
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+  padding: $space-md $space-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $space-md;
+}
+
+.add-row {
+  display: flex;
+  gap: $space-sm;
+
+  input {
+    flex: 1;
+    padding: $space-sm $space-md;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+    outline: none;
+    font-family: inherit;
+
+    &:focus {
+      border-color: $color-accent-gold;
+    }
+    &::placeholder {
+      color: $color-text-secondary;
+    }
+  }
+
+  button {
+    padding: $space-sm $space-md;
+    border: none;
+    border-radius: $radius-md;
+    background: $color-accent-gold;
+    color: $color-text-primary;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    cursor: pointer;
+    transition: filter $transition-fast;
+    font-family: inherit;
+
+    &:hover {
+      filter: brightness(0.93);
+    }
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: $space-xs;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: $space-sm;
+  padding: $space-sm $space-md;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-bg-muted;
+}
+
+.item__name {
+  flex: 1;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.item__delete {
+  display: flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: $color-text-secondary;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: $radius-sm;
+  transition:
+    color $transition-fast,
+    background $transition-fast;
+
+  &:hover {
+    color: $color-priority-high;
+    background: rgba($color-priority-high, 0.08);
+  }
+}
+
+.empty {
+  text-align: center;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  padding: $space-md 0;
+}

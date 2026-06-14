@@ -6,7 +6,7 @@ import {
   Info,
   Clock,
   Calendar,
-  Image,
+  Image as ImageIcon,
   FolderOpen,
   Settings,
   Share2,
@@ -26,7 +26,7 @@ const mainNavItems: NavItem[] = [
   { href: '/informacion', icon: <Info size={20} />, label: 'Información' },
   { href: '/historial', icon: <Clock size={20} />, label: 'Historial' },
   { href: '/calendario', icon: <Calendar size={20} />, label: 'Calendario' },
-  { href: '/galeria', icon: <Image size={20} />, label: 'Galería' },
+  { href: '/galeria', icon: <ImageIcon size={20} />, label: 'Galería' },
   { href: '/documentos', icon: <FolderOpen size={20} />, label: 'Documentos' },
 ];
 

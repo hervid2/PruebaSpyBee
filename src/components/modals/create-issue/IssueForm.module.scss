@@ -1,0 +1,179 @@
+@use '@/styles/abstracts/variables' as *;
+
+.form {
+  display: contents;
+}
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+  padding: $space-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $space-md;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: $space-sm;
+  padding: $space-md $space-lg;
+  border-top: 1px solid $color-border;
+  flex-shrink: 0;
+}
+
+// ── Field ──────────────────────────────────────────────────────────────────────
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: $space-xs;
+}
+
+.label {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+
+  &--required::after {
+    content: ' *';
+    color: $color-priority-high;
+  }
+}
+
+.input,
+.textarea,
+.select {
+  width: 100%;
+  padding: $space-sm $space-md;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  background: $color-bg-surface;
+  outline: none;
+  transition: border-color $transition-fast;
+  font-family: inherit;
+
+  &::placeholder {
+    color: $color-text-secondary;
+  }
+
+  &:focus {
+    border-color: $color-accent-gold;
+  }
+
+  &--error {
+    border-color: $color-priority-high !important;
+  }
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 88px;
+}
+
+.select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238a8f98' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
+}
+
+.error {
+  font-size: $font-size-xs;
+  color: $color-priority-high;
+  margin: 0;
+}
+
+// ── Row with action button ─────────────────────────────────────────────────────
+.field-row {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-sm;
+
+  > :first-child {
+    flex: 1;
+  }
+}
+
+.manage-btn {
+  margin-top: 24px; // aligns with input
+  padding: $space-sm $space-md;
+  border: 1px solid $color-accent-gold;
+  border-radius: $radius-md;
+  background: transparent;
+  color: $color-accent-gold;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background $transition-fast;
+
+  &:hover {
+    background: rgba($color-accent-gold, 0.08);
+  }
+  &:focus-visible {
+    outline: 2px solid $color-accent-gold;
+    outline-offset: 2px;
+  }
+}
+
+// ── Section separator ─────────────────────────────────────────────────────────
+.section-label {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-top: $space-sm;
+  border-top: 1px solid $color-border;
+}
+
+// ── Buttons ───────────────────────────────────────────────────────────────────
+.btn-cancel {
+  padding: $space-sm $space-md;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: transparent;
+  color: $color-text-primary;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: background $transition-fast;
+  font-family: inherit;
+
+  &:hover {
+    background: $color-bg-muted;
+  }
+  &:focus-visible {
+    outline: 2px solid $color-accent-gold;
+    outline-offset: 2px;
+  }
+}
+
+.btn-submit {
+  padding: $space-sm $space-lg;
+  border: none;
+  border-radius: $radius-md;
+  background: $color-accent-gold;
+  color: $color-text-primary;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+  transition: filter $transition-fast;
+  font-family: inherit;
+
+  &:hover {
+    filter: brightness(0.93);
+  }
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    filter: none;
+  }
+  &:focus-visible {
+    outline: 2px solid $color-text-primary;
+    outline-offset: 2px;
+  }
+}

@@ -1,0 +1,93 @@
+@use '@/styles/abstracts/variables' as *;
+@use '@/styles/abstracts/mixins' as *;
+
+.sidebar {
+  position: fixed;
+  top: $topbar-height;
+  left: 0;
+  width: $sidebar-width;
+  height: calc(100vh - #{$topbar-height});
+  background-color: $color-bg-dark;
+  @include flex-col;
+  align-items: center;
+  padding: $space-sm 0;
+  z-index: $z-sidebar;
+  overflow-y: auto;
+  @include scrollbar-thin;
+
+  @include mobile {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 56px;
+    flex-direction: row;
+    justify-content: space-around;
+    padding: 0 $space-sm;
+  }
+}
+
+.sidebar__top {
+  @include flex-col;
+  align-items: center;
+  gap: $space-xs;
+  width: 100%;
+  flex: 1;
+}
+
+.sidebar__bottom {
+  @include flex-col;
+  align-items: center;
+  gap: $space-xs;
+  width: 100%;
+  padding-bottom: $space-sm;
+
+  @include mobile {
+    display: none;
+  }
+}
+
+.sidebar__project-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: $radius-md;
+  background-color: $color-accent-gold;
+  @include flex-center;
+  margin-bottom: $space-md;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.sidebar__nav-item {
+  width: 40px;
+  height: 40px;
+  border-radius: $radius-md;
+  @include flex-center;
+  color: $color-text-secondary;
+  transition:
+    background-color $transition-fast,
+    color $transition-fast;
+  @include focus-ring;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #fff;
+  }
+
+  &--active {
+    background-color: $color-accent-gold;
+    color: $color-bg-dark;
+
+    &:hover {
+      background-color: darken($color-accent-gold, 8%);
+      color: $color-bg-dark;
+    }
+  }
+}
+
+.sidebar__divider {
+  width: 32px;
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.1);
+  margin: $space-sm 0;
+}

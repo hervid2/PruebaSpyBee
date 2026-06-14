@@ -1,0 +1,134 @@
+@use '@/styles/abstracts/variables' as *;
+@use '@/styles/abstracts/mixins' as *;
+
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: $topbar-height;
+  background-color: $color-bg-dark;
+  @include flex-between;
+  padding: 0 $space-md;
+  z-index: $z-topbar;
+  gap: $space-md;
+}
+
+.topbar__logo {
+  @include flex-center;
+  gap: $space-sm;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.topbar__logo-text {
+  font-size: $font-size-md;
+  font-weight: $font-weight-bold;
+  color: $color-accent-gold;
+  letter-spacing: 0.05em;
+}
+
+.topbar__title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: #fff;
+  white-space: nowrap;
+
+  @include mobile {
+    display: none;
+  }
+}
+
+.topbar__actions {
+  @include flex-center;
+  gap: $space-sm;
+  margin-left: auto;
+}
+
+.topbar__lang-selector {
+  @include flex-center;
+  gap: $space-xs;
+  padding: $space-xs $space-sm;
+  border-radius: $radius-sm;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: $font-size-xs;
+  cursor: pointer;
+  transition: background-color $transition-fast;
+  @include focus-ring;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.topbar__user {
+  @include flex-center;
+  gap: $space-sm;
+  padding: $space-xs $space-sm;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  transition: background-color $transition-fast;
+  @include focus-ring;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.topbar__user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: $radius-full;
+  background-color: $color-accent-gold;
+  @include flex-center;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  color: $color-bg-dark;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.topbar__user-info {
+  @include flex-col;
+
+  @include mobile {
+    display: none;
+  }
+}
+
+.topbar__user-name {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.topbar__user-role {
+  font-size: 11px;
+  color: $color-text-secondary;
+  line-height: 1.2;
+}
+
+.topbar__help {
+  width: 28px;
+  height: 28px;
+  border-radius: $radius-full;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  @include flex-center;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  cursor: pointer;
+  transition:
+    border-color $transition-fast,
+    color $transition-fast;
+  @include focus-ring;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.5);
+    color: #fff;
+  }
+}

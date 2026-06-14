@@ -1,0 +1,42 @@
+# spec file (internal)
+especificacion_incidencias.md
+
+# Next.js
+.next/
+out/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build
+dist/
+
+# Env
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+/coverage
+/playwright-report
+/test-results
+
+# Misc
+*.log
+.eslintcache

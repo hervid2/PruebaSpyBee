@@ -1,0 +1,103 @@
+@use 'variables' as *;
+
+// ─── Responsive ───────────────────────────────────────────────────────────────
+@mixin mobile {
+  @media (max-width: #{$breakpoint-mobile - 1}) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (min-width: $breakpoint-mobile) and (max-width: #{$breakpoint-desktop - 1}) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media (min-width: $breakpoint-desktop) {
+    @content;
+  }
+}
+
+@mixin wide {
+  @media (min-width: $breakpoint-wide) {
+    @content;
+  }
+}
+
+// ─── Flex helpers ─────────────────────────────────────────────────────────────
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+// ─── Typography ───────────────────────────────────────────────────────────────
+@mixin text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin text-label {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+// ─── Surface card ─────────────────────────────────────────────────────────────
+@mixin card {
+  background-color: $color-bg-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-sm;
+}
+
+// ─── Focus ring ───────────────────────────────────────────────────────────────
+@mixin focus-ring {
+  &:focus-visible {
+    outline: 2px solid $color-accent-gold;
+    outline-offset: 2px;
+  }
+}
+
+// ─── Visually hidden (a11y) ───────────────────────────────────────────────────
+@mixin sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// ─── Scrollbar ────────────────────────────────────────────────────────────────
+@mixin scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: $color-border transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: $color-border;
+    border-radius: $radius-full;
+  }
+}

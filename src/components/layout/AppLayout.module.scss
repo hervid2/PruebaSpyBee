@@ -1,0 +1,20 @@
+@use '@/styles/abstracts/variables' as *;
+
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.app-layout__content {
+  flex: 1;
+  margin-top: $topbar-height;
+  margin-left: $sidebar-width;
+  min-height: calc(100vh - #{$topbar-height});
+  display: flex;
+  flex-direction: column;
+
+  @media (max-width: #{$breakpoint-mobile - 1}) {
+    margin-left: 0;
+    margin-bottom: 56px; // bottom nav height on mobile
+  }
+}

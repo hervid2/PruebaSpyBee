@@ -1,0 +1,62 @@
+{
+  "name": "spybee-incidencias",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,scss,md}": [
+      "prettier --write"
+    ]
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.4.0",
+    "date-fns": "^4.4.0",
+    "lucide-react": "^1.18.0",
+    "mapbox-gl": "^3.24.1",
+    "next": "14.2.35",
+    "react": "^18",
+    "react-dom": "^18",
+    "react-dropzone": "^15.0.0",
+    "react-hook-form": "^7.79.0",
+    "recharts": "^3.8.1",
+    "sass": "^1.101.0",
+    "supercluster": "^8.0.1",
+    "zod": "^4.4.3",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/mapbox-gl": "^3.4.1",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@types/supercluster": "^7.1.3",
+    "@vitejs/plugin-react": "^6.0.2",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.35",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.8.4",
+    "typescript": "^5",
+    "vitest": "^4.1.8"
+  }
+}

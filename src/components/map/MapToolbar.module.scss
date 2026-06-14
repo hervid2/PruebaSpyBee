@@ -1,0 +1,158 @@
+@use '@/styles/abstracts/variables' as *;
+@use '@/styles/abstracts/mixins' as *;
+@use 'sass:color';
+
+// ─── Botón base compartido ────────────────────────────────────────────────────
+.toolbar__btn {
+  width: 36px;
+  height: 36px;
+  @include flex-center;
+  background: $color-bg-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  color: $color-text-secondary;
+  cursor: pointer;
+  box-shadow: $shadow-sm;
+  transition:
+    color $transition-fast,
+    background $transition-fast,
+    box-shadow $transition-fast;
+  @include focus-ring;
+
+  &:hover {
+    color: $color-text-primary;
+    background: $color-bg-muted;
+    box-shadow: $shadow-md;
+  }
+}
+
+// ─── Grupo inferior izquierdo ─────────────────────────────────────────────────
+.toolbar-left {
+  position: absolute;
+  left: $space-md;
+  bottom: $space-xl;
+  z-index: $z-toolbar;
+  @include flex-col;
+  gap: $space-xs;
+
+  @include mobile {
+    display: none;
+  }
+}
+
+// ─── Grupo inferior central ───────────────────────────────────────────────────
+.toolbar-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: $space-xl;
+  z-index: $z-toolbar;
+  display: flex;
+  align-items: center;
+  gap: $space-xs;
+  background: $color-bg-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: $space-xs;
+  box-shadow: $shadow-md;
+
+  @include mobile {
+    bottom: $space-md;
+    gap: 2px;
+  }
+}
+
+.toolbar__toggle-group {
+  display: flex;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.toolbar__toggle {
+  padding: $space-xs 14px;
+  border: none;
+  background: none;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition:
+    background $transition-fast,
+    color $transition-fast;
+  line-height: 1;
+  @include focus-ring;
+
+  &--active {
+    background: $color-accent-gold;
+    color: $color-bg-dark;
+  }
+
+  &:not(&--active):hover {
+    background: $color-bg-muted;
+    color: $color-text-primary;
+  }
+}
+
+.toolbar__center-divider {
+  width: 1px;
+  height: 20px;
+  background: $color-border;
+  flex-shrink: 0;
+  margin: 0 $space-xs;
+}
+
+// ─── Grupo derecho ────────────────────────────────────────────────────────────
+.toolbar-right {
+  position: absolute;
+  right: $space-md;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: $z-toolbar;
+  @include flex-col;
+  align-items: center;
+  gap: $space-sm;
+
+  @include mobile {
+    top: auto;
+    bottom: $space-md;
+    transform: none;
+  }
+}
+
+.toolbar__primary-btn {
+  width: 48px;
+  height: 48px;
+  @include flex-center;
+  background: $color-accent-gold;
+  border: none;
+  border-radius: 50%;
+  color: $color-bg-dark;
+  cursor: pointer;
+  box-shadow: $shadow-lg;
+  transition:
+    background $transition-fast,
+    transform $transition-fast,
+    box-shadow $transition-fast;
+  @include focus-ring;
+
+  &:hover {
+    background: color.adjust($color-accent-gold, $lightness: -8%);
+    box-shadow: 0 6px 20px rgba(242, 183, 5, 0.4);
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+.toolbar__secondary-group {
+  @include flex-col;
+  gap: $space-xs;
+
+  @include mobile {
+    display: none;
+  }
+}

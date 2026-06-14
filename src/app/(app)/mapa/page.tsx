@@ -1,9 +1,17 @@
-export default function MapaPage() {
+import { getIncidents } from '@/services/incidents.service';
+import { IssuesStoreProvider } from '@/store/useIssuesStore';
+import MapaView from '@/components/map/MapaView';
+
+export const metadata = {
+  title: 'Mapa de Incidencias — Spybee',
+};
+
+export default async function MapaPage() {
+  const incidents = await getIncidents();
+
   return (
-    <section
-      style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-    >
-      <p style={{ color: '#8a8f98', fontSize: 14 }}>Vista de Mapa — próximamente (Día 2)</p>
-    </section>
+    <IssuesStoreProvider initialIncidents={incidents}>
+      <MapaView />
+    </IssuesStoreProvider>
   );
 }

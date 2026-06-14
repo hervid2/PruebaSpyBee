@@ -1,0 +1,25 @@
+@use '@/styles/abstracts/variables' as *;
+@use '@/styles/abstracts/mixins' as *;
+
+.mapbox-viewer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+
+  &__canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  &__loading {
+    position: absolute;
+    inset: 0;
+    @include flex-center;
+    background: $color-bg-muted;
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    z-index: 1;
+  }
+}

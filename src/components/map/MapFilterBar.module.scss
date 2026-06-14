@@ -1,0 +1,228 @@
+@use '@/styles/abstracts/variables' as *;
+@use '@/styles/abstracts/mixins' as *;
+
+.map-filter-bar {
+  position: absolute;
+  top: $space-md;
+  left: $space-md;
+  right: $space-md;
+  z-index: $z-toolbar;
+  background: $color-bg-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  box-shadow: $shadow-md;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 $space-sm;
+  gap: $space-sm;
+  min-height: 44px;
+
+  @include mobile {
+    flex-wrap: wrap;
+    padding: $space-xs;
+    gap: $space-xs;
+  }
+
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: $space-xs;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  &__right {
+    display: flex;
+    align-items: center;
+    gap: $space-xs;
+    flex-shrink: 0;
+  }
+
+  &__icon-btn {
+    display: flex;
+    align-items: center;
+    gap: $space-xs;
+    padding: $space-xs $space-sm;
+    background: none;
+    border: none;
+    border-radius: $radius-sm;
+    color: $color-text-secondary;
+    font-size: $font-size-sm;
+    cursor: pointer;
+    white-space: nowrap;
+    transition:
+      background $transition-fast,
+      color $transition-fast;
+    @include focus-ring;
+
+    &:hover {
+      background: $color-bg-muted;
+      color: $color-text-primary;
+    }
+  }
+
+  &__btn-label {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+
+    @media (max-width: 640px) {
+      display: none;
+    }
+  }
+
+  &__divider {
+    width: 1px;
+    height: 20px;
+    background: $color-border;
+    flex-shrink: 0;
+  }
+
+  &__date-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  &__date-display {
+    padding: $space-xs $space-sm;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-primary;
+    border-radius: $radius-sm;
+    transition: background $transition-fast;
+    white-space: nowrap;
+    text-transform: capitalize;
+
+    &:hover {
+      background: $color-bg-muted;
+    }
+  }
+
+  &__date-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  &__visually-hidden {
+    @include sr-only;
+  }
+
+  &__slider-section {
+    display: flex;
+    align-items: center;
+    gap: $space-sm;
+    padding: 0 $space-xs;
+
+    @media (max-width: $breakpoint-tablet) {
+      display: none;
+    }
+  }
+
+  &__slider-label {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    white-space: nowrap;
+    min-width: 120px;
+  }
+
+  &__slider-track {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100px;
+  }
+
+  &__slider {
+    width: 100%;
+    height: 4px;
+    appearance: none;
+    background: $color-border;
+    border-radius: $radius-full;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+
+    &::-webkit-slider-thumb {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: $color-accent-gold;
+      border: 2px solid $color-bg-surface;
+      box-shadow: $shadow-sm;
+      cursor: pointer;
+    }
+
+    &::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: $color-accent-gold;
+      border: 2px solid $color-bg-surface;
+      box-shadow: $shadow-sm;
+      cursor: pointer;
+      border: none;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $color-accent-gold;
+      outline-offset: 2px;
+    }
+  }
+
+  &__stops {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    pointer-events: none;
+    padding: 0 1px;
+  }
+
+  &__stop {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: $color-border;
+    flex-shrink: 0;
+
+    &--active {
+      background: $color-accent-gold;
+    }
+  }
+
+  &__action-btn {
+    padding: $space-xs $space-md;
+    border: 1px solid $color-border;
+    border-radius: $radius-sm;
+    background: $color-bg-surface;
+    color: $color-text-primary;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    cursor: pointer;
+    white-space: nowrap;
+    transition:
+      background $transition-fast,
+      border-color $transition-fast;
+    @include focus-ring;
+
+    &:hover {
+      background: $color-bg-muted;
+      border-color: $color-text-secondary;
+    }
+
+    @include mobile {
+      padding: $space-xs $space-sm;
+      font-size: $font-size-xs;
+    }
+  }
+}

@@ -16,8 +16,8 @@ export interface DashboardMetrics {
     highPriorityOpen: number;
     dueWithin7d: number;
   };
-  byCategory: { category: string; count: number }[];
-  byTag: { tag: string; count: number; children?: { tag: string; count: number }[] }[];
+  byType: { typeKey: string; typeName: string; count: number }[];
+  byTag: { tagId: string; tagName: string; tagColor: string; count: number }[];
   team: {
     resolvers: { user: UserRef; closedCount: number; avgDays: number }[];
     reporters: { user: UserRef; createdCount: number }[];

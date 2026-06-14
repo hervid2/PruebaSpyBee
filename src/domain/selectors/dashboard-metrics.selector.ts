@@ -18,25 +18,26 @@ export function getDashboardMetrics(
   incidents: Incident[],
   filters: DashboardFilters,
 ): DashboardMetrics {
-  const now = new Date();
-  const today = startOfDay(now);
+  const today = startOfDay(new Date());
   const { from, to } = getPeriodRange(filters);
 
-  let filtered = incidents;
-  if (filters.createdByCompany?.length) {
-    filtered = filtered.filter((i) => filters.createdByCompany!.includes(i.createdBy.company));
+  let filtered = incidents.filter((i) => !('deleted' in i && i.deleted));
+
+  if (filters.status?.length) {
+    filtered = filtered.filter((i) => filters.status!.includes(i.status));
+  }
+  if (filters.priority?.length) {
+    filtered = filtered.filter((i) => filters.priority!.includes(i.priority));
+  }
+  if (filters.typeKey?.length) {
+    filtered = filtered.filter((i) => filters.typeKey!.includes(i.type.key));
   }
   if (filters.createdByUser?.length) {
-    filtered = filtered.filter((i) => filters.createdByUser!.includes(i.createdBy.id));
+    filtered = filtered.filter((i) => filters.createdByUser!.includes(i.owner.id));
   }
   if (filters.responsibleUser?.length) {
     filtered = filtered.filter((i) =>
       i.assignees.some((a) => filters.responsibleUser!.includes(a.id)),
-    );
-  }
-  if (filters.responsibleCompany?.length) {
-    filtered = filtered.filter((i) =>
-      i.assignees.some((a) => filters.responsibleCompany!.includes(a.company)),
     );
   }
 
@@ -45,33 +46,33 @@ export function getDashboardMetrics(
     return !isBefore(created, from) && !isAfter(created, to);
   });
 
-  const openCount = filtered.filter((i) => i.status === 'abierta').length;
+  const openCount = filtered.filter((i) => i.status === 'open').length;
   const createdInPeriod = inPeriod.length;
-  const closedInPeriod = inPeriod.filter((i) => i.status === 'cerrada').length;
+  const closedInPeriod = inPeriod.filter((i) => i.status === 'closed').length;
   const closureRate =
     createdInPeriod > 0 ? Math.round((closedInPeriod / createdInPeriod) * 100) : 0;
 
-  const closedWithDuration = filtered.filter((i) => i.status === 'cerrada');
+  const closedWithDate = filtered.filter((i) => i.status === 'closed' && i.closingDate);
   const avgResolutionDays =
-    closedWithDuration.length > 0
+    closedWithDate.length > 0
       ? Math.round(
-          closedWithDuration.reduce((acc, i) => {
-            const diff = differenceInDays(parseISO(i.updatedAt), parseISO(i.createdAt));
+          closedWithDate.reduce((acc, i) => {
+            const diff = differenceInDays(parseISO(i.closingDate!), parseISO(i.createdAt));
             return acc + Math.max(0, diff);
-          }, 0) / closedWithDuration.length,
+          }, 0) / closedWithDate.length,
         )
       : null;
 
   const overdueActiveCount = filtered.filter(
-    (i) => i.status === 'abierta' && i.dueDate && isBefore(parseISO(i.dueDate), today),
+    (i) => i.status === 'open' && i.dueDate && isBefore(parseISO(i.dueDate), today),
   ).length;
 
-  const byStatus = (['abierta', 'pausada', 'cerrada'] as const).map((status) => ({
+  const byStatus = (['open', 'on_pause', 'closed'] as const).map((status) => ({
     status,
     count: filtered.filter((i) => i.status === status).length,
   }));
 
-  const byPriority = (['alta', 'media', 'baja'] as const).map((priority) => ({
+  const byPriority = (['high', 'medium', 'low'] as const).map((priority) => ({
     priority,
     count: filtered.filter((i) => i.priority === priority).length,
   }));
@@ -81,7 +82,7 @@ export function getDashboardMetrics(
     const key = format(parseISO(i.createdAt), 'yyyy-MM-dd');
     const entry = trendMap.get(key) ?? { created: 0, closed: 0 };
     entry.created += 1;
-    if (i.status === 'cerrada') entry.closed += 1;
+    if (i.status === 'closed') entry.closed += 1;
     trendMap.set(key, entry);
   });
   let backlog = 0;
@@ -99,71 +100,73 @@ export function getDashboardMetrics(
 
   const risk = {
     overdueToday: filtered.filter(
-      (i) => i.status === 'abierta' && i.dueDate && isBefore(parseISO(i.dueDate), today),
+      (i) => i.status === 'open' && i.dueDate && isBefore(parseISO(i.dueDate), today),
     ).length,
     staleSince7d: filtered.filter(
-      (i) => i.status === 'abierta' && isBefore(parseISO(i.updatedAt), sevenDaysAgo),
+      (i) => i.status === 'open' && isBefore(parseISO(i.updatedAt), sevenDaysAgo),
     ).length,
-    highPriorityOpen: filtered.filter((i) => i.status === 'abierta' && i.priority === 'alta')
-      .length,
+    highPriorityOpen: filtered.filter((i) => i.status === 'open' && i.priority === 'high').length,
     dueWithin7d: filtered.filter(
       (i) =>
-        i.status === 'abierta' &&
+        i.status === 'open' &&
         i.dueDate &&
         !isBefore(parseISO(i.dueDate), today) &&
         isBefore(parseISO(i.dueDate), sevenDaysFromNow),
     ).length,
   };
 
-  const categoryMap = new Map<string, number>();
+  const typeMap = new Map<string, { typeName: string; count: number }>();
   filtered.forEach((i) => {
-    const key = i.category.name;
-    categoryMap.set(key, (categoryMap.get(key) ?? 0) + 1);
+    const prev = typeMap.get(i.type.key) ?? { typeName: i.type.name, count: 0 };
+    prev.count += 1;
+    typeMap.set(i.type.key, prev);
   });
-  const byCategory = Array.from(categoryMap.entries())
-    .map(([category, count]) => ({ category, count }))
+  const byType = Array.from(typeMap.entries())
+    .map(([typeKey, { typeName, count }]) => ({ typeKey, typeName, count }))
     .sort((a, b) => b.count - a.count);
 
-  const tagMap = new Map<string, number>();
-  filtered.forEach((i) => i.tags.forEach((t) => tagMap.set(t.name, (tagMap.get(t.name) ?? 0) + 1)));
+  const tagMap = new Map<string, { tagName: string; tagColor: string; count: number }>();
+  filtered.forEach((i) =>
+    i.tags.forEach((t) => {
+      const prev = tagMap.get(t.id) ?? { tagName: t.name, tagColor: t.color, count: 0 };
+      prev.count += 1;
+      tagMap.set(t.id, prev);
+    }),
+  );
   const byTag = Array.from(tagMap.entries())
-    .map(([tag, count]) => ({ tag, count }))
+    .map(([tagId, { tagName, tagColor, count }]) => ({ tagId, tagName, tagColor, count }))
     .sort((a, b) => b.count - a.count);
 
   const resolverMap = new Map<
     string,
-    { closedCount: number; totalDays: number; user: (typeof filtered)[0]['createdBy'] }
+    { closedCount: number; totalDays: number; user: Incident['owner'] }
   >();
   filtered
-    .filter((i) => i.status === 'cerrada')
+    .filter((i) => i.status === 'closed')
     .forEach((i) => {
       i.assignees.forEach((a) => {
         const prev = resolverMap.get(a.id) ?? { closedCount: 0, totalDays: 0, user: a };
         prev.closedCount += 1;
-        prev.totalDays += Math.max(
-          0,
-          differenceInDays(parseISO(i.updatedAt), parseISO(i.createdAt)),
-        );
+        prev.totalDays += i.closingDate
+          ? Math.max(0, differenceInDays(parseISO(i.closingDate), parseISO(i.createdAt)))
+          : 0;
         resolverMap.set(a.id, prev);
       });
     });
 
-  const reporterMap = new Map<
-    string,
-    { createdCount: number; user: (typeof filtered)[0]['createdBy'] }
-  >();
+  const reporterMap = new Map<string, { createdCount: number; user: Incident['owner'] }>();
   filtered.forEach((i) => {
-    const prev = reporterMap.get(i.createdBy.id) ?? { createdCount: 0, user: i.createdBy };
+    const prev = reporterMap.get(i.owner.id) ?? { createdCount: 0, user: i.owner };
     prev.createdCount += 1;
-    reporterMap.set(i.createdBy.id, prev);
+    reporterMap.set(i.owner.id, prev);
   });
 
   const workloadMap = new Map<
     string,
-    { openCount: number; overdueCount: number; user: (typeof filtered)[0]['createdBy'] }
+    { openCount: number; overdueCount: number; user: Incident['owner'] }
   >();
   filtered
-    .filter((i) => i.status === 'abierta')
+    .filter((i) => i.status === 'open')
     .forEach((i) => {
       const overdue = i.dueDate ? isBefore(parseISO(i.dueDate), today) : false;
       i.assignees.forEach((a) => {
@@ -175,8 +178,8 @@ export function getDashboardMetrics(
     });
 
   const heatmapPoints = filtered
-    .filter((i) => i.location !== null)
-    .map((i) => ({ lat: i.location!.lat, lng: i.location!.lng, weight: 1 }));
+    .filter((i) => i.coordinates !== null)
+    .map((i) => ({ lat: i.coordinates!.lat, lng: i.coordinates!.lng, weight: 1 }));
 
   const calMap = new Map<string, number>();
   filtered.forEach((i) => {
@@ -196,7 +199,7 @@ export function getDashboardMetrics(
     byPriority,
     trend,
     risk,
-    byCategory,
+    byType,
     byTag,
     team: {
       resolvers: Array.from(resolverMap.values())

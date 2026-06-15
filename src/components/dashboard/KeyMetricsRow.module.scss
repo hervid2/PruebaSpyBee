@@ -1,0 +1,73 @@
+@use '@/styles/abstracts/variables' as *;
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: $space-md;
+  padding: $space-xl;
+
+  @media (max-width: #{$breakpoint-desktop}) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @media (max-width: #{$breakpoint-tablet}) {
+    grid-template-columns: repeat(2, 1fr);
+    padding: $space-md;
+  }
+}
+
+.card {
+  position: relative;
+  background: $color-bg-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  box-shadow: $shadow-sm;
+  transition: box-shadow $transition-fast;
+
+  &:hover {
+    box-shadow: $shadow-md;
+  }
+
+  &__accent {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--accent, #{$color-accent-gold});
+  }
+
+  &__body {
+    padding: $space-md $space-md $space-md calc(#{$space-md} + 4px + #{$space-sm});
+    display: flex;
+    flex-direction: column;
+    gap: $space-xs;
+  }
+
+  &__label {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    font-weight: $font-weight-medium;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0;
+  }
+
+  &__value {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+    color: $color-text-primary;
+    margin: 0;
+    line-height: $line-height-tight;
+  }
+
+  &__sub {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    margin: 0;
+  }
+}

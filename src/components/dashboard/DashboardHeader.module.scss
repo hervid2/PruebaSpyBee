@@ -1,0 +1,142 @@
+@use '@/styles/abstracts/variables' as *;
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: $space-md;
+  padding: $space-xl $space-xl $space-md;
+  background: $color-bg-surface;
+  border-bottom: 1px solid $color-border;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: $space-md;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: $space-xs;
+
+  &__item {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+
+  &__item--active {
+    font-size: $font-size-xs;
+    color: $color-text-primary;
+    font-weight: $font-weight-medium;
+  }
+
+  &__sep {
+    color: $color-text-secondary;
+    flex-shrink: 0;
+  }
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: $space-sm;
+  flex-wrap: wrap;
+}
+
+.period {
+  display: flex;
+  background: $color-bg-muted;
+  border-radius: $radius-md;
+  padding: 2px;
+
+  &__btn {
+    padding: 6px $space-md;
+    border-radius: calc(#{$radius-md} - 2px);
+    border: none;
+    background: transparent;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    color: $color-text-secondary;
+    cursor: pointer;
+    transition: all $transition-fast;
+    white-space: nowrap;
+
+    &:hover {
+      color: $color-text-primary;
+    }
+
+    &--active {
+      background: $color-bg-surface;
+      color: $color-text-primary;
+      box-shadow: $shadow-sm;
+    }
+  }
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-xs;
+  padding: 8px $space-md;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  background: $color-bg-surface;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  cursor: pointer;
+  transition: all $transition-fast;
+  white-space: nowrap;
+
+  &:hover {
+    background: $color-bg-muted;
+  }
+
+  &--primary {
+    background: $color-accent-gold;
+    border-color: $color-accent-gold;
+    color: $color-text-primary;
+
+    &:hover {
+      background: $color-accent-gold-alt;
+      border-color: $color-accent-gold-alt;
+    }
+  }
+}
+
+.meta {
+  display: flex;
+  align-items: baseline;
+  gap: $space-md;
+
+  &__title {
+    font-size: $font-size-2xl;
+    font-weight: $font-weight-bold;
+    color: $color-text-primary;
+    margin: 0;
+  }
+
+  &__subtitle {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    margin: 0;
+  }
+}
+
+@media (max-width: #{$breakpoint-tablet}) {
+  .header {
+    padding: $space-md;
+  }
+
+  .top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .period__btn {
+    padding: 6px $space-sm;
+  }
+}

@@ -1,0 +1,223 @@
+@use '@/styles/abstracts/variables' as *;
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: $z-modal;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: $topbar-height 0 0;
+}
+
+.modal {
+  width: 420px;
+  max-width: 100vw;
+  height: calc(100vh - #{$topbar-height});
+  background: $color-bg-surface;
+  display: flex;
+  flex-direction: column;
+  box-shadow: $shadow-lg;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $space-lg;
+    border-bottom: 1px solid $color-border;
+    flex-shrink: 0;
+  }
+
+  &__title {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    margin: 0;
+  }
+
+  &__close {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    border-radius: $radius-md;
+    cursor: pointer;
+    color: $color-text-secondary;
+    transition: background $transition-fast;
+
+    &:hover {
+      background: $color-bg-muted;
+    }
+  }
+
+  &__body {
+    flex: 1;
+    overflow-y: auto;
+    padding: $space-lg;
+    display: flex;
+    flex-direction: column;
+    gap: $space-lg;
+  }
+
+  &__footer {
+    display: flex;
+    gap: $space-sm;
+    padding: $space-md $space-lg;
+    border-top: 1px solid $color-border;
+    flex-shrink: 0;
+  }
+}
+
+.field {
+  border: none;
+  padding: 0;
+  margin: 0;
+
+  &__label {
+    display: block;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    margin-bottom: $space-sm;
+  }
+}
+
+.chipGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-xs;
+}
+
+.chip {
+  padding: 6px $space-md;
+  border-radius: $radius-full;
+  border: 1px solid $color-border;
+  background: transparent;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    border-color: $color-accent-gold;
+    color: $color-text-primary;
+  }
+
+  &--active {
+    background: rgba(242, 183, 5, 0.15);
+    border-color: $color-accent-gold;
+    color: $color-text-primary;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.userList {
+  display: flex;
+  flex-direction: column;
+  gap: $space-xs;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: $space-xs;
+}
+
+.userChip {
+  display: flex;
+  align-items: center;
+  gap: $space-sm;
+  padding: $space-sm;
+  border-radius: $radius-sm;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background $transition-fast;
+  width: 100%;
+
+  &:hover {
+    background: $color-bg-muted;
+  }
+
+  &--active {
+    background: rgba(242, 183, 5, 0.12);
+  }
+
+  &__avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: $color-accent-gold;
+    color: $color-text-primary;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-bold;
+    flex-shrink: 0;
+  }
+
+  &__name {
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+    flex: 1;
+  }
+
+  &__company {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    flex-shrink: 0;
+  }
+}
+
+.btnPrimary {
+  flex: 1;
+  padding: 10px;
+  border-radius: $radius-md;
+  border: none;
+  background: $color-accent-gold;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  cursor: pointer;
+  transition: background $transition-fast;
+
+  &:hover {
+    background: $color-accent-gold-alt;
+  }
+}
+
+.btnSecondary {
+  padding: 10px $space-lg;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  background: transparent;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: $color-bg-muted;
+    color: $color-text-primary;
+  }
+}
+
+@media (max-width: #{$breakpoint-tablet}) {
+  .overlay {
+    align-items: flex-end;
+    justify-content: center;
+    padding-top: 0;
+  }
+
+  .modal {
+    width: 100%;
+    height: 85vh;
+    border-radius: $radius-lg $radius-lg 0 0;
+  }
+}

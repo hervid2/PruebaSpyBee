@@ -117,6 +117,7 @@ export function getDashboardMetrics(
 
   const typeMap = new Map<string, { typeName: string; count: number }>();
   filtered.forEach((i) => {
+    if (!i.type?.key) return;
     const prev = typeMap.get(i.type.key) ?? { typeName: i.type.name, count: 0 };
     prev.count += 1;
     typeMap.set(i.type.key, prev);
@@ -127,7 +128,7 @@ export function getDashboardMetrics(
 
   const tagMap = new Map<string, { tagName: string; tagColor: string; count: number }>();
   filtered.forEach((i) =>
-    i.tags.forEach((t) => {
+    (i.tags ?? []).filter(Boolean).forEach((t) => {
       const prev = tagMap.get(t.id) ?? { tagName: t.name, tagColor: t.color, count: 0 };
       prev.count += 1;
       tagMap.set(t.id, prev);
@@ -144,7 +145,7 @@ export function getDashboardMetrics(
   filtered
     .filter((i) => i.status === 'closed')
     .forEach((i) => {
-      i.assignees.forEach((a) => {
+      (i.assignees ?? []).filter(Boolean).forEach((a) => {
         const prev = resolverMap.get(a.id) ?? { closedCount: 0, totalDays: 0, user: a };
         prev.closedCount += 1;
         prev.totalDays += i.closingDate
@@ -156,6 +157,7 @@ export function getDashboardMetrics(
 
   const reporterMap = new Map<string, { createdCount: number; user: Incident['owner'] }>();
   filtered.forEach((i) => {
+    if (!i.owner?.id) return;
     const prev = reporterMap.get(i.owner.id) ?? { createdCount: 0, user: i.owner };
     prev.createdCount += 1;
     reporterMap.set(i.owner.id, prev);
@@ -169,7 +171,7 @@ export function getDashboardMetrics(
     .filter((i) => i.status === 'open')
     .forEach((i) => {
       const overdue = i.dueDate ? isBefore(parseISO(i.dueDate), today) : false;
-      i.assignees.forEach((a) => {
+      (i.assignees ?? []).filter(Boolean).forEach((a) => {
         const prev = workloadMap.get(a.id) ?? { openCount: 0, overdueCount: 0, user: a };
         prev.openCount += 1;
         if (overdue) prev.overdueCount += 1;

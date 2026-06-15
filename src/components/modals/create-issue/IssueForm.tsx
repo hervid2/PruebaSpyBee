@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import { useForm, Controller, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
@@ -11,10 +12,11 @@ import { MOCK_USERS } from '@/lib/constants/mock-users';
 import TagTreeSelect from './TagTreeSelect';
 import UserMultiSelect from './UserMultiSelect';
 import CategoryManagerModal from './CategoryManagerModal';
+import LocationPicker from './LocationPicker';
+import FileUploader from './FileUploader';
 import type { Tag } from '@/domain/models';
 import styles from './IssueForm.module.scss';
 
-// Static flat tags from the mock data
 const MOCK_TAGS: Tag[] = [
   { id: '4bf3f690ae021229ec15f203', name: 'Reproceso', color: '#EF4444' },
   { id: '2a544044d7c705a56d0cf6c5', name: 'Acabados', color: '#6366F1' },
@@ -44,11 +46,14 @@ interface Props {
 export default function IssueForm({ onClose }: Props) {
   const addIncident = useIssuesStore((s) => s.addIncident);
   const openModal = useModalStore((s) => s.open);
+  const [mediaFiles, setMediaFiles] = useState<File[]>([]);
 
   const {
     register,
     handleSubmit,
     control,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
     reset,
   } = useForm<IssueFormValues>({
@@ -66,6 +71,9 @@ export default function IssueForm({ onClose }: Props) {
       locationDescription: null,
     },
   });
+
+  const coordinates = watch('coordinates');
+  const locationDescription = watch('locationDescription');
 
   const onSubmit = async (data: IssueFormValues) => {
     const type = INCIDENT_TYPES.find((t) => t.id === data.typeId)!;
@@ -85,7 +93,7 @@ export default function IssueForm({ onClose }: Props) {
         tags,
         coordinates: data.coordinates ?? null,
         locationDescription: data.locationDescription ?? null,
-        media: [],
+        media: mediaFiles,
       },
       MOCK_OWNER,
       MOCK_PROJECT,
@@ -93,6 +101,7 @@ export default function IssueForm({ onClose }: Props) {
 
     addIncident(incident);
     reset();
+    setMediaFiles([]);
     onClose();
   };
 
@@ -247,7 +256,7 @@ export default function IssueForm({ onClose }: Props) {
           />
         </div>
 
-        {/* ── Asignados ───────────────────────────────────────────────────────── */}
+        {/* ── Personas ────────────────────────────────────────────────────────── */}
         <p className={styles['section-label']}>Personas</p>
 
         <div className={styles.field}>
@@ -267,7 +276,6 @@ export default function IssueForm({ onClose }: Props) {
           />
         </div>
 
-        {/* ── Observadores ────────────────────────────────────────────────────── */}
         <div className={styles.field}>
           <span className={styles.label}>Observadores</span>
           <Controller
@@ -283,6 +291,29 @@ export default function IssueForm({ onClose }: Props) {
               />
             )}
           />
+        </div>
+
+        {/* ── Ubicación ───────────────────────────────────────────────────────── */}
+        <p className={styles['section-label']}>Ubicación</p>
+
+        <div className={styles.field}>
+          <LocationPicker
+            value={coordinates ?? null}
+            locationDescription={locationDescription ?? null}
+            onChangeCoords={(coords) =>
+              setValue('coordinates', coords, { shouldValidate: true, shouldDirty: true })
+            }
+            onChangeDescription={(desc) =>
+              setValue('locationDescription', desc, { shouldDirty: true })
+            }
+          />
+        </div>
+
+        {/* ── Archivos adjuntos ────────────────────────────────────────────────── */}
+        <p className={styles['section-label']}>Archivos adjuntos</p>
+
+        <div className={styles.field}>
+          <FileUploader value={mediaFiles} onChange={setMediaFiles} />
         </div>
       </div>
 

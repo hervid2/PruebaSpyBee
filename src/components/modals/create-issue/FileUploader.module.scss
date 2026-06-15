@@ -1,0 +1,181 @@
+@use '@/styles/abstracts/variables' as *;
+
+.uploader {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  overflow: hidden;
+  background: $color-bg-surface;
+
+  // ── Tabs ──────────────────────────────────────────────────────────────
+  &__tabs {
+    display: flex;
+    border-bottom: 1px solid $color-border;
+  }
+
+  &__tab {
+    flex: 1;
+    padding: $space-sm $space-md;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-secondary;
+    cursor: pointer;
+    transition:
+      color $transition-fast,
+      border-color $transition-fast;
+    font-family: inherit;
+
+    &:hover {
+      color: $color-text-primary;
+    }
+
+    &--active {
+      color: $color-accent-gold;
+      border-bottom-color: $color-accent-gold;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $color-accent-gold;
+      outline-offset: -2px;
+    }
+  }
+
+  // ── Dropzone ──────────────────────────────────────────────────────────
+  &__dropzone {
+    margin: $space-md;
+    padding: $space-lg $space-md;
+    border: 2px dashed $color-border;
+    border-radius: $radius-md;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $space-xs;
+    text-align: center;
+    cursor: pointer;
+    transition:
+      border-color $transition-fast,
+      background $transition-fast;
+
+    &:hover,
+    &--active {
+      border-color: $color-accent-gold;
+      background: rgba($color-accent-gold, 0.04);
+    }
+  }
+
+  &__upload_icon {
+    color: $color-text-secondary;
+    margin-bottom: $space-xs;
+  }
+
+  &__hint {
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+    margin: 0;
+    font-weight: $font-weight-medium;
+  }
+
+  &__formats {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    margin: 0;
+  }
+
+  // ── Empty state ────────────────────────────────────────────────────────
+  &__empty {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    text-align: center;
+    padding: $space-md $space-md $space-lg;
+    margin: 0;
+  }
+
+  // ── Preview grid ───────────────────────────────────────────────────────
+  &__grid {
+    list-style: none;
+    margin: 0 $space-md $space-md;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: $space-sm;
+  }
+
+  &__item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $space-xs;
+    border: 1px solid $color-border;
+    border-radius: $radius-sm;
+    padding: $space-xs;
+    min-width: 0;
+
+    &:hover .uploader__remove {
+      opacity: 1;
+    }
+  }
+
+  &__thumbnail {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: $radius-sm;
+  }
+
+  &__file_icon {
+    width: 100%;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: $color-bg-muted;
+    border-radius: $radius-sm;
+    color: $color-text-secondary;
+  }
+
+  &__filename {
+    font-size: 10px;
+    color: $color-text-secondary;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
+    margin: 0;
+  }
+
+  &__remove {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 18px;
+    height: 18px;
+    border-radius: $radius-full;
+    border: none;
+    background: $color-priority-high;
+    color: $color-bg-surface;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    opacity: 0;
+    transition:
+      opacity $transition-fast,
+      filter $transition-fast;
+
+    &:hover {
+      filter: brightness(0.85);
+    }
+    &:focus-visible {
+      opacity: 1;
+      outline: 2px solid $color-text-primary;
+      outline-offset: 2px;
+    }
+  }
+}

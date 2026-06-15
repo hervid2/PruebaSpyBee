@@ -17,7 +17,7 @@ export const createIssuesStore = (initialIncidents: Incident[] = []) =>
 
 export type IssuesStoreApi = ReturnType<typeof createIssuesStore>;
 
-const IssuesStoreContext = createContext<IssuesStoreApi | null>(null);
+export const IssuesStoreContext = createContext<IssuesStoreApi | null>(null);
 
 export function IssuesStoreProvider({
   children,

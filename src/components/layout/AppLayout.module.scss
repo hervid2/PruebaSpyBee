@@ -9,7 +9,7 @@
   flex: 1;
   margin-top: $topbar-height;
   margin-left: $sidebar-width;
-  min-height: calc(100vh - #{$topbar-height});
+  height: calc(100vh - #{$topbar-height});
   display: flex;
   flex-direction: column;
 

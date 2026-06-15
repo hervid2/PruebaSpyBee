@@ -43,7 +43,7 @@ export default function SidebarNav({ activeHref }: SidebarNavProps) {
   return (
     <nav className={styles.sidebar} aria-label="Navegación principal">
       <div className={styles.sidebar__top}>
-        <div className={styles.sidebar__project_avatar} aria-hidden="true">
+        <div className={styles['sidebar__project-avatar']} aria-hidden="true">
           <span style={{ fontSize: 18, fontWeight: 700, color: '#1a1a1a' }}>S</span>
         </div>
 
@@ -51,7 +51,7 @@ export default function SidebarNav({ activeHref }: SidebarNavProps) {
           <Link
             key={item.href}
             href={item.href}
-            className={`${styles.sidebar__nav_item}${activeHref === item.href ? ` ${styles['sidebar__nav_item--active']}` : ''}`}
+            className={`${styles['sidebar__nav-item']}${activeHref === item.href ? ` ${styles['sidebar__nav-item--active']}` : ''}`}
             aria-label={item.label}
             title={item.label}
           >
@@ -66,7 +66,7 @@ export default function SidebarNav({ activeHref }: SidebarNavProps) {
           <Link
             key={item.href}
             href={item.href}
-            className={styles.sidebar__nav_item}
+            className={styles['sidebar__nav-item']}
             aria-label={item.label}
             title={item.label}
           >

@@ -1,19 +1,30 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { getDashboardMetrics } from '@/domain/selectors/dashboard-metrics.selector';
 import { FIXTURE_INCIDENTS } from '../fixtures/incidents.fixture';
 import type { DashboardFilters } from '@/domain/models/filters.model';
 
-// Context: today = 2026-06-14. All incidents created in May 2026.
-// Period '30d' covers 2026-05-15 → 2026-06-14 (inPeriod: f3, f4, f5... let's calculate)
+// Tests are pinned to 2026-06-14 so the 30d window (2026-05-15 → 2026-06-14) is deterministic.
 // f1 createdAt 2026-05-10 → NOT in 30d period
 // f2 createdAt 2026-05-12 → NOT in 30d period
 // f3 createdAt 2026-05-15 → boundary: in period
 // f4 createdAt 2026-05-20 → in period
 // f5 createdAt 2026-05-05 → NOT in period
 
+// Noon UTC on 2026-06-14 ensures startOfDay() returns June 14 local midnight
+// in any timezone from UTC-12 to UTC+11 — avoiding off-by-one-day edge cases.
+const FIXED_TODAY = new Date('2026-06-14T12:00:00.000Z');
 const DEFAULT_FILTERS: DashboardFilters = { period: '30d' };
 
 describe('getDashboardMetrics', () => {
+  beforeAll(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(FIXED_TODAY);
+  });
+
+  afterAll(() => {
+    vi.useRealTimers();
+  });
+
   describe('KPI básicos', () => {
     it('calcula openCount correctamente (incidencias open en filtered)', () => {
       const metrics = getDashboardMetrics(FIXTURE_INCIDENTS, DEFAULT_FILTERS);

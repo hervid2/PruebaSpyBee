@@ -1,4 +1,23 @@
 @use '@/styles/abstracts/variables' as *;
+@use '@/styles/abstracts/mixins' as *;
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: $space-sm;
+  z-index: $z-toast;
+  padding: $space-sm $space-md;
+  background: $color-accent-gold;
+  color: $color-bg-dark;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  border-radius: $radius-md;
+  text-decoration: none;
+
+  &:focus {
+    left: $space-md;
+  }
+}
 
 .app-layout {
   display: flex;

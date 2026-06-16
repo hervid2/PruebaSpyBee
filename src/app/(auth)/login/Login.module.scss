@@ -1,0 +1,186 @@
+@use '@/styles/abstracts/variables' as *;
+@use '@/styles/abstracts/mixins' as *;
+
+.login {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $color-bg-dark;
+  padding: $space-md;
+}
+
+.login__card {
+  @include card;
+  width: 100%;
+  max-width: 420px;
+  padding: $space-2xl $space-xl;
+  background: #222;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: $shadow-lg;
+}
+
+.login__header {
+  text-align: center;
+  margin-bottom: $space-xl;
+}
+
+.login__logo {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-accent-gold;
+  letter-spacing: 0.05em;
+}
+
+.login__title {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: #fff;
+  margin-top: $space-xs;
+  margin-bottom: $space-xs;
+}
+
+.login__subtitle {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.login__form {
+  @include flex-col;
+  gap: $space-md;
+}
+
+.login__field {
+  @include flex-col;
+  gap: $space-xs;
+}
+
+.login__label {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.03em;
+}
+
+.login__input {
+  width: 100%;
+  padding: $space-sm $space-md;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: $radius-md;
+  color: #fff;
+  font-size: $font-size-sm;
+  transition:
+    border-color $transition-fast,
+    box-shadow $transition-fast;
+  @include focus-ring;
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.25);
+  }
+
+  &:focus {
+    border-color: $color-accent-gold;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  &--error {
+    border-color: $color-priority-high;
+  }
+}
+
+.login__password_wrap {
+  position: relative;
+}
+
+.login__password_wrap .login__input {
+  padding-right: 40px;
+}
+
+.login__eye_btn {
+  position: absolute;
+  right: $space-sm;
+  top: 50%;
+  transform: translateY(-50%);
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: color $transition-fast;
+  @include focus-ring;
+
+  &:hover {
+    color: #fff;
+  }
+}
+
+.login__error {
+  font-size: $font-size-xs;
+  color: $color-priority-high;
+}
+
+.login__server_error {
+  padding: $space-sm $space-md;
+  background: rgba($color-priority-high, 0.12);
+  border: 1px solid rgba($color-priority-high, 0.3);
+  border-radius: $radius-md;
+  color: #fca5a5;
+  font-size: $font-size-sm;
+  text-align: center;
+}
+
+.login__submit {
+  width: 100%;
+  padding: $space-sm + 2px $space-md;
+  background: $color-accent-gold;
+  color: $color-bg-dark;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition:
+    background-color $transition-fast,
+    opacity $transition-fast;
+  margin-top: $space-xs;
+  @include focus-ring;
+
+  &:hover:not(:disabled) {
+    background: darken($color-accent-gold, 8%);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.login__demo {
+  margin-top: $space-xl;
+  padding-top: $space-md;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.login__demo_title {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: $space-sm;
+}
+
+.login__demo_item {
+  @include flex-col;
+  gap: 2px;
+  margin-bottom: $space-sm;
+}
+
+.login__demo_label {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.login__demo_code {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: monospace;
+  word-break: break-all;
+}

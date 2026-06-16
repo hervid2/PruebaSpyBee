@@ -1,4 +1,6 @@
+'use client';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   Home,
   LayoutDashboard,
@@ -40,28 +42,39 @@ interface SidebarNavProps {
 }
 
 export default function SidebarNav({ activeHref }: SidebarNavProps) {
+  const pathname = usePathname();
+  const active = activeHref ?? pathname;
+
   return (
     <nav className={styles.sidebar} aria-label="Navegación principal">
       <div className={styles.sidebar__top}>
-        <div className={styles['sidebar__project-avatar']} aria-hidden="true">
+        <div
+          className={styles['sidebar__project-avatar']}
+          aria-label="Proyecto Onboarding"
+          role="img"
+        >
           <span style={{ fontSize: 18, fontWeight: 700, color: '#1a1a1a' }}>S</span>
         </div>
 
-        {mainNavItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`${styles['sidebar__nav-item']}${activeHref === item.href ? ` ${styles['sidebar__nav-item--active']}` : ''}`}
-            aria-label={item.label}
-            title={item.label}
-          >
-            {item.icon}
-          </Link>
-        ))}
+        {mainNavItems.map((item) => {
+          const isActive = active === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`${styles['sidebar__nav-item']}${isActive ? ` ${styles['sidebar__nav-item--active']}` : ''}`}
+              aria-label={item.label}
+              aria-current={isActive ? 'page' : undefined}
+              title={item.label}
+            >
+              {item.icon}
+            </Link>
+          );
+        })}
       </div>
 
       <div className={styles.sidebar__bottom}>
-        <div className={styles.sidebar__divider} />
+        <div className={styles.sidebar__divider} role="separator" />
         {bottomNavItems.map((item) => (
           <Link
             key={item.href}

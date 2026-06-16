@@ -1,0 +1,137 @@
+@use '@/styles/abstracts/variables' as *;
+@use '@/styles/abstracts/mixins' as *;
+
+.calendar {
+  @include flex-col;
+  gap: $space-md;
+  min-width: 280px;
+}
+
+.calendar__nav {
+  @include flex-between;
+  align-items: center;
+}
+
+.calendar__nav_btn {
+  width: 28px;
+  height: 28px;
+  border-radius: $radius-sm;
+  @include flex-center;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition:
+    background-color $transition-fast,
+    color $transition-fast;
+  @include focus-ring;
+
+  &:hover {
+    background-color: $color-bg-muted;
+    color: $color-text-primary;
+  }
+}
+
+.calendar__month {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  text-transform: capitalize;
+  min-width: 140px;
+  text-align: center;
+}
+
+.calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.calendar__col_header {
+  font-size: 10px;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  text-align: center;
+  padding: 2px 0 $space-xs;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.calendar__empty {
+  aspect-ratio: 1;
+}
+
+.calendar__day {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: $radius-sm;
+  @include flex-center;
+  flex-direction: column;
+  gap: 1px;
+  background: $color-bg-muted;
+  cursor: default;
+  transition: background-color $transition-fast;
+
+  &--low {
+    background: rgba($color-info-blue, 0.15);
+  }
+
+  &--mid {
+    background: rgba($color-info-blue, 0.35);
+  }
+
+  &--high {
+    background: $color-info-blue;
+
+    .calendar__day_num,
+    .calendar__badge {
+      color: #fff;
+    }
+  }
+
+  &--today {
+    box-shadow: 0 0 0 2px $color-accent-gold;
+  }
+}
+
+.calendar__day_num {
+  font-size: 10px;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  line-height: 1;
+}
+
+.calendar__badge {
+  font-size: 9px;
+  font-weight: $font-weight-bold;
+  color: $color-info-blue;
+  line-height: 1;
+}
+
+.calendar__legend {
+  @include flex-center;
+  gap: $space-xs;
+  margin-top: $space-xs;
+}
+
+.calendar__legend_label {
+  font-size: 10px;
+  color: $color-text-secondary;
+}
+
+.calendar__legend_dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: $color-bg-muted;
+
+  &.calendar__day--low {
+    background: rgba($color-info-blue, 0.15);
+  }
+
+  &.calendar__day--mid {
+    background: rgba($color-info-blue, 0.35);
+  }
+
+  &.calendar__day--high {
+    background: $color-info-blue;
+  }
+}

@@ -1,0 +1,61 @@
+@use '@/styles/abstracts/variables' as *;
+@use '@/styles/abstracts/mixins' as *;
+
+.heatmap {
+  @include card;
+  padding: $space-xl;
+  overflow: hidden;
+
+  @media (max-width: #{$breakpoint-tablet}) {
+    padding: $space-md;
+  }
+}
+
+.heatmap__title {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $space-lg;
+}
+
+.heatmap__body {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: $space-xl;
+  align-items: start;
+
+  @media (max-width: #{$breakpoint-desktop}) {
+    grid-template-columns: 1fr 260px;
+    gap: $space-lg;
+  }
+
+  @media (max-width: #{$breakpoint-tablet}) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.heatmap__map {
+  height: 340px;
+  border-radius: $radius-md;
+  overflow: hidden;
+  background: $color-bg-muted;
+
+  @media (max-width: #{$breakpoint-tablet}) {
+    height: 260px;
+  }
+}
+
+.heatmap__calendar {
+  @include flex-col;
+  gap: $space-sm;
+
+  @media (max-width: #{$breakpoint-tablet}) {
+    align-items: center;
+  }
+}
+
+.heatmap__calendar_title {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}

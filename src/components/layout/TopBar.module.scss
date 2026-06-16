@@ -112,6 +112,24 @@
   line-height: 1.2;
 }
 
+.topbar__logout {
+  width: 32px;
+  height: 32px;
+  border-radius: $radius-sm;
+  @include flex-center;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition:
+    color $transition-fast,
+    background-color $transition-fast;
+  @include focus-ring;
+
+  &:hover {
+    color: $color-priority-high;
+    background-color: rgba($color-priority-high, 0.1);
+  }
+}
+
 .topbar__help {
   width: 28px;
   height: 28px;

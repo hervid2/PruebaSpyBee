@@ -10,8 +10,10 @@ import styles from './DashboardFiltersModal.module.scss';
 
 const PERIODS: { value: DashboardPeriod; label: string }[] = [
   { value: '7d', label: 'Últimos 7 días' },
+  { value: '15d', label: 'Últimos 15 días' },
   { value: '30d', label: 'Últimos 30 días' },
   { value: '90d', label: 'Últimos 90 días' },
+  { value: '6m', label: 'Últimos 6 meses' },
 ];
 
 const STATUSES: { value: IncidentStatus; label: string }[] = [
@@ -25,6 +27,8 @@ const PRIORITIES: { value: IncidentPriority; label: string }[] = [
   { value: 'medium', label: 'Media' },
   { value: 'low', label: 'Baja' },
 ];
+
+const COMPANIES = Array.from(new Set(MOCK_USERS.map((u) => u.company)));
 
 function toggle<T>(arr: T[] | undefined, item: T): T[] {
   const current = arr ?? [];
@@ -123,6 +127,17 @@ export default function DashboardFiltersModal() {
           </fieldset>
 
           <fieldset className={styles.field}>
+            <legend className={styles.field__label}>Creado por (compañía)</legend>
+            <ChipGroup
+              options={COMPANIES.map((c) => ({ value: c, label: c }))}
+              selected={draft.createdByCompany}
+              onToggle={(v) =>
+                setDraft((d) => ({ ...d, createdByCompany: toggle(d.createdByCompany, v) }))
+              }
+            />
+          </fieldset>
+
+          <fieldset className={styles.field}>
             <legend className={styles.field__label}>Creado por (usuario)</legend>
             <div className={styles.userList}>
               {MOCK_USERS.map((u) => {
@@ -147,6 +162,20 @@ export default function DashboardFiltersModal() {
           </fieldset>
 
           <fieldset className={styles.field}>
+            <legend className={styles.field__label}>Responsable por (compañía)</legend>
+            <ChipGroup
+              options={COMPANIES.map((c) => ({ value: c, label: c }))}
+              selected={draft.responsibleByCompany}
+              onToggle={(v) =>
+                setDraft((d) => ({
+                  ...d,
+                  responsibleByCompany: toggle(d.responsibleByCompany, v),
+                }))
+              }
+            />
+          </fieldset>
+
+          <fieldset className={styles.field}>
             <legend className={styles.field__label}>Responsable (usuario)</legend>
             <div className={styles.userList}>
               {MOCK_USERS.map((u) => {
@@ -157,7 +186,10 @@ export default function DashboardFiltersModal() {
                     type="button"
                     className={`${styles.userChip} ${active ? styles['userChip--active'] : ''}`}
                     onClick={() =>
-                      setDraft((d) => ({ ...d, responsibleUser: toggle(d.responsibleUser, u.id) }))
+                      setDraft((d) => ({
+                        ...d,
+                        responsibleUser: toggle(d.responsibleUser, u.id),
+                      }))
                     }
                     aria-pressed={active ?? false}
                   >

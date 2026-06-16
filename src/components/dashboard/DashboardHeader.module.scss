@@ -124,6 +124,16 @@
     color: $color-text-secondary;
     margin: 0;
   }
+
+  &__range {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    background: $color-bg-muted;
+    padding: 3px $space-sm;
+    border-radius: $radius-full;
+    border: 1px solid $color-border;
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 @media (max-width: #{$breakpoint-tablet}) {

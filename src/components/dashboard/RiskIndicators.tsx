@@ -47,7 +47,7 @@ export default function RiskIndicators({ activeFilter, onFilterChange }: Props) 
 
   return (
     <section className={styles.section} aria-label="Indicadores de riesgo">
-      <h2 className={styles.title}>Riesgo</h2>
+      <h2 className={styles.title}>Indicadores de riesgo</h2>
       <div className={styles.chips}>
         {CHIPS.map(({ key, label, icon: Icon, color }) => {
           const count = risk[key];

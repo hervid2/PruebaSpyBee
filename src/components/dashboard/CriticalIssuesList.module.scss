@@ -14,6 +14,7 @@
   justify-content: space-between;
   padding: $space-lg;
   border-bottom: 1px solid $color-border;
+  gap: $space-md;
 
   &__title {
     font-size: $font-size-md;
@@ -26,6 +27,12 @@
     font-size: $font-size-xs;
     color: $color-accent-gold;
     font-weight: $font-weight-medium;
+  }
+
+  &__right {
+    display: flex;
+    align-items: center;
+    gap: $space-sm;
   }
 
   &__count {
@@ -153,6 +160,21 @@
   }
 }
 
+.ownerCell {
+  display: flex;
+  align-items: center;
+  gap: $space-xs;
+
+  &__name {
+    font-size: $font-size-xs;
+    color: $color-text-primary;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+  }
+}
+
 .avatars {
   display: flex;
   align-items: center;
@@ -171,6 +193,21 @@
   font-size: 11px;
   font-weight: $font-weight-semibold;
   border: 2px solid $color-bg-surface;
+  flex-shrink: 0;
+
+  & + & {
+    margin-left: -6px;
+  }
+}
+
+.avatarImg {
+  display: inline-block;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid $color-bg-surface;
+  object-fit: cover;
+  flex-shrink: 0;
 
   & + & {
     margin-left: -6px;
@@ -230,5 +267,259 @@
     color: $color-text-secondary;
     min-width: 60px;
     text-align: center;
+  }
+}
+
+// ── Table filter button ─────────────────────────────────────────
+
+.filterBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-xs;
+  padding: 6px $space-md;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  background: $color-bg-surface;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-fast;
+  white-space: nowrap;
+
+  &:hover {
+    background: $color-bg-muted;
+    color: $color-text-primary;
+  }
+
+  &--active {
+    border-color: $color-accent-gold;
+    color: $color-text-primary;
+    background: rgba(242, 183, 5, 0.08);
+  }
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    border-radius: $radius-full;
+    background: $color-accent-gold;
+    color: $color-text-primary;
+    font-size: 10px;
+    font-weight: $font-weight-bold;
+    padding: 0 4px;
+  }
+}
+
+// ── Table filter modal ──────────────────────────────────────────
+
+.filterOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $space-lg;
+}
+
+.filterModal {
+  background: $color-bg-surface;
+  border-radius: $radius-lg;
+  width: 400px;
+  max-width: 100%;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: $shadow-lg;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $space-md $space-lg;
+    border-bottom: 1px solid $color-border;
+    flex-shrink: 0;
+  }
+
+  &__title {
+    font-size: $font-size-md;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    margin: 0;
+  }
+
+  &__close {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    border-radius: $radius-sm;
+    cursor: pointer;
+    color: $color-text-secondary;
+    transition: background $transition-fast;
+
+    &:hover {
+      background: $color-bg-muted;
+    }
+  }
+
+  &__body {
+    flex: 1;
+    overflow-y: auto;
+    padding: $space-lg;
+    display: flex;
+    flex-direction: column;
+    gap: $space-lg;
+  }
+
+  &__footer {
+    display: flex;
+    gap: $space-sm;
+    padding: $space-md $space-lg;
+    border-top: 1px solid $color-border;
+    flex-shrink: 0;
+  }
+}
+
+.filterField {
+  border: none;
+  padding: 0;
+  margin: 0;
+
+  &__label {
+    display: block;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    margin-bottom: $space-xs;
+  }
+}
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-xs;
+}
+
+.fChip {
+  padding: 5px $space-sm;
+  border-radius: $radius-full;
+  border: 1px solid $color-border;
+  background: transparent;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    border-color: $color-accent-gold;
+    color: $color-text-primary;
+  }
+
+  &--active {
+    background: rgba(242, 183, 5, 0.15);
+    border-color: $color-accent-gold;
+    color: $color-text-primary;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.userFilterList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: $space-xs;
+}
+
+.userFilterChip {
+  display: flex;
+  align-items: center;
+  gap: $space-sm;
+  padding: $space-xs $space-sm;
+  border-radius: $radius-sm;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background $transition-fast;
+  width: 100%;
+
+  &:hover {
+    background: $color-bg-muted;
+  }
+
+  &--active {
+    background: rgba(242, 183, 5, 0.1);
+  }
+
+  &__avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: $color-accent-gold;
+    color: $color-text-primary;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: $font-weight-bold;
+    flex-shrink: 0;
+  }
+
+  &__name {
+    font-size: $font-size-xs;
+    color: $color-text-primary;
+    flex: 1;
+  }
+
+  &__company {
+    font-size: 10px;
+    color: $color-text-secondary;
+    flex-shrink: 0;
+  }
+}
+
+.filterBtnPrimary {
+  flex: 1;
+  padding: 9px;
+  border-radius: $radius-md;
+  border: none;
+  background: $color-accent-gold;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  cursor: pointer;
+  transition: background $transition-fast;
+
+  &:hover {
+    background: $color-accent-gold-alt;
+  }
+}
+
+.filterBtnSecondary {
+  padding: 9px $space-lg;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  background: transparent;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: $color-bg-muted;
+    color: $color-text-primary;
   }
 }

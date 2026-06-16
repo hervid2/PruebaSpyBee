@@ -3,6 +3,7 @@ import { useRef, useEffect } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
+import { useIssuesStore } from '@/store/useIssuesStore';
 import CalendarActivity from './CalendarActivity';
 import styles from './HeatmapSection.module.scss';
 
@@ -10,6 +11,7 @@ export default function HeatmapSection() {
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const metrics = useDashboardMetrics();
+  const incidents = useIssuesStore((s) => s.incidents);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -92,7 +94,7 @@ export default function HeatmapSection() {
         />
         <aside className={styles.heatmap__calendar} aria-label="Actividad por día">
           <h3 className={styles.heatmap__calendar_title}>Actividad diaria</h3>
-          <CalendarActivity activity={metrics.calendarActivity} />
+          <CalendarActivity activity={metrics.calendarActivity} incidents={incidents} />
         </aside>
       </div>
     </section>

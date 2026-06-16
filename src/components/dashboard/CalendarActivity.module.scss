@@ -68,7 +68,10 @@
   gap: 1px;
   background: $color-bg-muted;
   cursor: default;
-  transition: background-color $transition-fast;
+  transition:
+    background-color $transition-fast,
+    box-shadow $transition-fast,
+    transform $transition-fast;
 
   &--low {
     background: rgba($color-info-blue, 0.15);
@@ -89,6 +92,20 @@
 
   &--today {
     box-shadow: 0 0 0 2px $color-accent-gold;
+  }
+
+  &--clickable {
+    cursor: pointer;
+
+    &:hover {
+      filter: brightness(1.1);
+      transform: scale(1.05);
+    }
+  }
+
+  &--selected {
+    box-shadow: 0 0 0 2px $color-text-primary;
+    transform: scale(1.05);
   }
 }
 
@@ -133,5 +150,166 @@
 
   &.calendar__day--high {
     background: $color-info-blue;
+  }
+}
+
+.calendar__hint {
+  font-size: 10px;
+  color: $color-text-secondary;
+  text-align: center;
+  margin: 0;
+  font-style: italic;
+}
+
+// ── Day detail panel ────────────────────────────────────────────
+
+.dayDetail {
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  overflow: hidden;
+  margin-top: $space-xs;
+  background: $color-bg-surface;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: $space-xs;
+    padding: $space-xs $space-sm;
+    background: $color-bg-muted;
+    border-bottom: 1px solid $color-border;
+  }
+
+  &__date {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    flex: 1;
+    text-transform: capitalize;
+  }
+
+  &__count {
+    font-size: 10px;
+    color: $color-text-secondary;
+    flex-shrink: 0;
+  }
+
+  &__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border: none;
+    background: transparent;
+    border-radius: $radius-sm;
+    cursor: pointer;
+    color: $color-text-secondary;
+    flex-shrink: 0;
+    padding: 0;
+
+    &:hover {
+      background: $color-border;
+      color: $color-text-primary;
+    }
+  }
+
+  &__empty {
+    padding: $space-sm;
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    text-align: center;
+    margin: 0;
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+
+  &__item {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    align-items: center;
+    gap: $space-xs;
+    padding: 5px $space-sm;
+    border-bottom: 1px solid $color-border;
+    font-size: $font-size-xs;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  &__id {
+    font-family: monospace;
+    font-size: 10px;
+    color: $color-text-secondary;
+    background: $color-bg-muted;
+    padding: 1px 4px;
+    border-radius: $radius-sm;
+    flex-shrink: 0;
+  }
+
+  &__title {
+    color: $color-text-primary;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__priority {
+    font-size: 10px;
+    font-weight: $font-weight-semibold;
+    padding: 1px 6px;
+    border-radius: $radius-full;
+    flex-shrink: 0;
+
+    &--high {
+      background: rgba(229, 72, 77, 0.12);
+      color: $color-priority-high;
+    }
+
+    &--medium {
+      background: rgba(245, 166, 35, 0.12);
+      color: $color-priority-medium;
+    }
+
+    &--low {
+      background: rgba(52, 199, 89, 0.12);
+      color: $color-priority-low;
+    }
+  }
+
+  &__status {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: $radius-full;
+    flex-shrink: 0;
+
+    &--open {
+      background: rgba(52, 199, 89, 0.12);
+      color: $color-status-open;
+    }
+
+    &--on_pause {
+      background: rgba(245, 166, 35, 0.12);
+      color: $color-status-paused;
+    }
+
+    &--closed {
+      background: rgba(229, 72, 77, 0.1);
+      color: $color-status-closed;
+    }
+  }
+
+  &__more {
+    padding: 5px $space-sm;
+    font-size: 10px;
+    color: $color-text-secondary;
+    text-align: center;
+    font-style: italic;
   }
 }

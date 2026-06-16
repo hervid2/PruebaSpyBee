@@ -1,6 +1,6 @@
 import type { IncidentStatus, IncidentPriority } from './incident.model';
 
-export type DashboardPeriod = '7d' | '30d' | '90d' | 'custom';
+export type DashboardPeriod = '7d' | '15d' | '30d' | '90d' | '6m' | 'custom';
 
 export interface DashboardFilters {
   period: DashboardPeriod;
@@ -10,6 +10,8 @@ export interface DashboardFilters {
   typeKey?: string[];
   createdByUser?: string[];
   responsibleUser?: string[];
+  createdByCompany?: string[];
+  responsibleByCompany?: string[];
 }
 
 export interface MapFilters {

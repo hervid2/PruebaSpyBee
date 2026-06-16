@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, Globe, LogOut } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
+import BeeIcon from '@/components/ui/BeeIcon';
 import styles from './TopBar.module.scss';
 
 interface TopBarProps {
@@ -34,6 +35,7 @@ export default function TopBar({ projectName = 'Proyecto Onboarding' }: TopBarPr
       : 'U';
   const displayName = mounted && user ? user.name : 'Usuario';
   const displayRole = mounted && user ? user.role : 'Superadmin';
+  const avatarUrl = mounted && user ? user.avatarUrl : undefined;
 
   return (
     <header className={styles.topbar} role="banner">
@@ -41,9 +43,10 @@ export default function TopBar({ projectName = 'Proyecto Onboarding' }: TopBarPr
         <span className={styles['topbar__logo-text']}>Spybee</span>
       </Link>
 
-      <span className={styles.topbar__title} aria-live="polite">
-        {projectName}
-      </span>
+      <div className={styles.topbar__title} aria-live="polite">
+        <span>{projectName}</span>
+        <BeeIcon size={22} />
+      </div>
 
       <div className={styles.topbar__actions}>
         <button
@@ -62,7 +65,12 @@ export default function TopBar({ projectName = 'Proyecto Onboarding' }: TopBarPr
           type="button"
         >
           <div className={styles['topbar__user-avatar']} aria-hidden="true">
-            {initials}
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatarUrl} alt="" width={36} height={36} />
+            ) : (
+              initials
+            )}
           </div>
           <div className={styles['topbar__user-info']}>
             <span className={styles['topbar__user-name']}>{displayName}</span>

@@ -32,6 +32,9 @@
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: $font-size-sm;
   font-weight: $font-weight-semibold;
   color: #fff;
@@ -79,9 +82,9 @@
 }
 
 .topbar__user-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: $radius-full;
+  width: 36px;
+  height: 36px;
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
   background-color: $color-accent-gold;
   @include flex-center;
   font-size: $font-size-xs;
@@ -89,6 +92,13 @@
   color: $color-bg-dark;
   flex-shrink: 0;
   overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
 }
 
 .topbar__user-info {

@@ -46,30 +46,32 @@ function DonutChart({
     <div className={styles.chart}>
       <h3 className={styles.chart__title}>{title}</h3>
       <div className={styles.chart__inner}>
-        <ResponsiveContainer width="100%" height={200}>
-          <PieChart>
-            <Pie
-              data={chartData}
-              cx="50%"
-              cy="50%"
-              innerRadius={55}
-              outerRadius={80}
-              paddingAngle={3}
-              dataKey="value"
-              aria-label={title}
-            >
-              {chartData.map((_, i) => (
-                <Cell key={i} fill={colors[i]} />
-              ))}
-            </Pie>
-            <Tooltip
-              formatter={(value) => {
-                const v = typeof value === 'number' ? value : 0;
-                return [`${v} (${total > 0 ? Math.round((v / total) * 100) : 0}%)`, ''];
-              }}
-            />
-          </PieChart>
-        </ResponsiveContainer>
+        <div className={styles.chart__pie}>
+          <ResponsiveContainer width="100%" height={200}>
+            <PieChart>
+              <Pie
+                data={chartData}
+                cx="50%"
+                cy="50%"
+                innerRadius={55}
+                outerRadius={80}
+                paddingAngle={3}
+                dataKey="value"
+                aria-label={title}
+              >
+                {chartData.map((_, i) => (
+                  <Cell key={i} fill={colors[i]} />
+                ))}
+              </Pie>
+              <Tooltip
+                formatter={(value) => {
+                  const v = typeof value === 'number' ? value : 0;
+                  return [`${v} (${total > 0 ? Math.round((v / total) * 100) : 0}%)`, ''];
+                }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
         <div className={styles.chart__legend}>
           {chartData.map((d, i) => (
             <div key={d.name} className={styles.legend__item}>

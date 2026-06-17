@@ -28,6 +28,7 @@
 
   &__inner {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: $space-lg;
 
@@ -36,10 +37,16 @@
     }
   }
 
+  &__pie {
+    flex: 1 1 180px;
+    min-width: 180px;
+  }
+
   &__legend {
     display: flex;
     flex-direction: column;
     gap: $space-sm;
+    flex: 1 1 140px;
     min-width: 140px;
   }
 }

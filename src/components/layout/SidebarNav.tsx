@@ -15,6 +15,7 @@ import {
   Share2,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
+import BeeIcon from '@/components/ui/BeeIcon';
 import styles from './SidebarNav.module.scss';
 
 interface NavItem {
@@ -41,9 +42,13 @@ const bottomNavItems: NavItem[] = [
 
 interface SidebarNavProps {
   activeHref?: string;
+  projectName?: string;
 }
 
-export default function SidebarNav({ activeHref }: SidebarNavProps) {
+export default function SidebarNav({
+  activeHref,
+  projectName = 'Proyecto Onboarding',
+}: SidebarNavProps) {
   const pathname = usePathname();
   const active = activeHref ?? pathname;
   const user = useAuthStore((s) => s.user);
@@ -107,6 +112,11 @@ export default function SidebarNav({ activeHref }: SidebarNavProps) {
             {item.icon}
           </Link>
         ))}
+      </div>
+
+      <div className={styles.sidebar__title} aria-hidden="true">
+        <span>{projectName}</span>
+        <BeeIcon size={16} />
       </div>
     </nav>
   );

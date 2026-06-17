@@ -22,8 +22,9 @@
     width: 100%;
     height: 56px;
     flex-direction: row;
-    justify-content: space-around;
+    justify-content: flex-start;
     padding: 0 $space-sm;
+    overflow: visible;
   }
 }
 
@@ -33,6 +34,49 @@
   gap: $space-xs;
   width: 100%;
   flex: 1;
+
+  @include mobile {
+    flex-direction: row;
+    width: auto;
+    min-width: 0;
+    flex: 1;
+    gap: $space-sm;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+.sidebar__title {
+  display: none;
+
+  @include mobile {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    max-width: 32vw;
+    margin-left: $space-sm;
+    padding-left: $space-sm;
+    border-left: 1px solid rgba(255, 255, 255, 0.15);
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: #fff;
+
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    svg {
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+    }
+  }
 }
 
 .sidebar__bottom {
@@ -57,6 +101,11 @@
   overflow: hidden;
   flex-shrink: 0;
 
+  @include mobile {
+    margin-bottom: 0;
+    margin-right: $space-sm;
+  }
+
   img {
     width: 100%;
     height: 100%;
@@ -68,6 +117,7 @@
 .sidebar__nav-item {
   width: 40px;
   height: 40px;
+  flex-shrink: 0;
   border-radius: $radius-md;
   @include flex-center;
   color: $color-text-secondary;

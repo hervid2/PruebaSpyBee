@@ -41,7 +41,25 @@
   white-space: nowrap;
 
   @include mobile {
-    display: none;
+    position: static;
+    left: auto;
+    transform: none;
+    flex: 1;
+    justify-content: center;
+    min-width: 0;
+    font-size: $font-size-xs;
+
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    svg {
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+    }
   }
 }
 

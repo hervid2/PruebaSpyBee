@@ -1,6 +1,7 @@
 import { getIncidents } from '@/services/incidents.service';
 import { IssuesStoreProvider } from '@/store/useIssuesStore';
 import DashboardView from '@/components/dashboard/DashboardView';
+import IncidentDetailModal from '@/components/modals/incident-detail/IncidentDetailModal';
 
 // Dashboard consumes live incident data — never statically prerender
 export const dynamic = 'force-dynamic';
@@ -15,6 +16,7 @@ export default async function DashboardPage() {
   return (
     <IssuesStoreProvider initialIncidents={incidents}>
       <DashboardView />
+      <IncidentDetailModal />
     </IssuesStoreProvider>
   );
 }

@@ -60,20 +60,21 @@ function UserAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string }) {
   const [imgError, setImgError] = useState(false);
   if (avatarUrl && !imgError) {
     return (
-      <Image
-        src={avatarUrl}
-        alt={name}
-        title={name}
-        width={26}
-        height={26}
-        className={styles.avatarImg}
-        onError={() => setImgError(true)}
-      />
+      <span className={styles.avatarWrap} title={name}>
+        <Image
+          src={avatarUrl}
+          alt={name}
+          width={28}
+          height={22}
+          className={styles.avatarImg}
+          onError={() => setImgError(true)}
+        />
+      </span>
     );
   }
   return (
-    <span className={styles.avatar} title={name}>
-      {name.charAt(0).toUpperCase()}
+    <span className={styles.avatarWrap} title={name}>
+      <span className={styles.avatar}>{name.charAt(0).toUpperCase()}</span>
     </span>
   );
 }
@@ -260,7 +261,7 @@ export default function CriticalIssuesList({ riskFilter }: Props) {
         return false;
       if (
         dashboardFilters.createdByUser?.length &&
-        !dashboardFilters.createdByUser.includes(i.owner.id)
+        !dashboardFilters.createdByUser.includes(i.owner?.id ?? '')
       )
         return false;
       if (
@@ -303,7 +304,7 @@ export default function CriticalIssuesList({ riskFilter }: Props) {
       list = list.filter((i) => tableFilters.status.includes(i.status));
     }
     if (tableFilters.createdBy.length) {
-      list = list.filter((i) => tableFilters.createdBy.includes(i.owner.id));
+      list = list.filter((i) => tableFilters.createdBy.includes(i.owner?.id ?? ''));
     }
     if (tableFilters.due === 'overdue') {
       list = list.filter((i) => i.dueDate && isBefore(parseISO(i.dueDate), TODAY));
@@ -431,10 +432,12 @@ export default function CriticalIssuesList({ riskFilter }: Props) {
                     <td className={styles.td}>
                       <div className={styles.ownerCell}>
                         <UserAvatar
-                          name={incident.owner.name}
-                          avatarUrl={incident.owner.avatarUrl}
+                          name={incident.owner?.name ?? 'Sin asignar'}
+                          avatarUrl={incident.owner?.avatarUrl}
                         />
-                        <span className={styles.ownerCell__name}>{incident.owner.name}</span>
+                        <span className={styles.ownerCell__name}>
+                          {incident.owner?.name ?? 'Sin asignar'}
+                        </span>
                       </div>
                     </td>
                     <td className={styles.td}>

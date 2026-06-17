@@ -1,18 +1,26 @@
 'use client';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { format, parseISO } from 'date-fns';
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import { useIssuesStore } from '@/store/useIssuesStore';
+import { createMarkerElement } from '@/components/map/IncidentMarker';
+import { getPopupHTML } from '@/components/map/IncidentPopup';
 import CalendarActivity from './CalendarActivity';
 import styles from './HeatmapSection.module.scss';
 
 export default function HeatmapSection() {
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+
   const metrics = useDashboardMetrics();
   const incidents = useIssuesStore((s) => s.incidents);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
+  // Map initialization — runs once
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
@@ -20,7 +28,7 @@ export default function HeatmapSection() {
 
     const map = new mapboxgl.Map({
       container: containerRef.current,
-      style: 'mapbox://styles/mapbox/light-v11',
+      style: 'mapbox://styles/mapbox/streets-v12',
       center: [-74.072, 4.711],
       zoom: 9,
       attributionControl: false,
@@ -69,6 +77,8 @@ export default function HeatmapSection() {
           'heatmap-opacity': 0.85,
         },
       });
+
+      setIsLoaded(true);
     });
 
     mapRef.current = map;
@@ -76,9 +86,56 @@ export default function HeatmapSection() {
     return () => {
       mapRef.current?.remove();
       mapRef.current = null;
+      setIsLoaded(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Update markers and heatmap visibility whenever incidents, selectedDate, or map loads
+  useEffect(() => {
+    if (!mapRef.current || !isLoaded) return;
+
+    markersRef.current.forEach((m) => m.remove());
+    markersRef.current = [];
+
+    const toShow = selectedDate
+      ? incidents.filter((i) => {
+          try {
+            return format(parseISO(i.createdAt), 'yyyy-MM-dd') === selectedDate;
+          } catch {
+            return false;
+          }
+        })
+      : incidents;
+
+    toShow
+      .filter((i) => i.coordinates != null)
+      .forEach((incident) => {
+        const el = createMarkerElement(incident);
+        const popup = new mapboxgl.Popup({
+          closeButton: true,
+          closeOnClick: false,
+          maxWidth: '280px',
+          offset: 20,
+        }).setHTML(getPopupHTML(incident));
+
+        const marker = new mapboxgl.Marker({ element: el })
+          .setLngLat([incident.coordinates!.lng, incident.coordinates!.lat])
+          .setPopup(popup)
+          .addTo(mapRef.current!);
+
+        markersRef.current.push(marker);
+      });
+
+    // When a date is selected show only its markers; otherwise also show heatmap density
+    if (mapRef.current.getLayer('incidents-heat-layer')) {
+      mapRef.current.setLayoutProperty(
+        'incidents-heat-layer',
+        'visibility',
+        selectedDate ? 'none' : 'visible',
+      );
+    }
+  }, [incidents, selectedDate, isLoaded]);
 
   return (
     <section className={styles.heatmap} aria-labelledby="heatmap-title">
@@ -90,11 +147,16 @@ export default function HeatmapSection() {
           ref={containerRef}
           className={styles.heatmap__map}
           role="img"
-          aria-label="Mapa de calor de incidencias por ubicación"
+          aria-label="Mapa de incidencias"
         />
         <aside className={styles.heatmap__calendar} aria-label="Actividad por día">
           <h3 className={styles.heatmap__calendar_title}>Actividad diaria</h3>
-          <CalendarActivity activity={metrics.calendarActivity} incidents={incidents} />
+          <CalendarActivity
+            activity={metrics.calendarActivity}
+            incidents={incidents}
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+          />
         </aside>
       </div>
     </section>

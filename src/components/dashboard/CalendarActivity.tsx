@@ -9,6 +9,8 @@ import styles from './CalendarActivity.module.scss';
 interface CalendarActivityProps {
   activity: { date: string; count: number }[];
   incidents?: Incident[];
+  selectedDate?: string | null;
+  onSelectDate?: (date: string | null) => void;
 }
 
 const DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
@@ -27,9 +29,24 @@ function getIntensity(count: number): string {
   return styles['calendar__day--high'];
 }
 
-export default function CalendarActivity({ activity, incidents = [] }: CalendarActivityProps) {
+export default function CalendarActivity({
+  activity,
+  incidents = [],
+  selectedDate: controlledDate,
+  onSelectDate,
+}: CalendarActivityProps) {
   const [current, setCurrent] = useState(() => new Date());
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [internalDate, setInternalDate] = useState<string | null>(null);
+
+  const selectedDate = controlledDate !== undefined ? controlledDate : internalDate;
+
+  function setSelectedDate(val: string | null) {
+    if (onSelectDate) {
+      onSelectDate(val);
+    } else {
+      setInternalDate(val);
+    }
+  }
 
   const actMap = new Map(activity.map((a) => [a.date, a.count]));
 
@@ -57,7 +74,7 @@ export default function CalendarActivity({ activity, incidents = [] }: CalendarA
 
   function handleDayClick(key: string, count: number) {
     if (count === 0) return;
-    setSelectedDate((prev) => (prev === key ? null : key));
+    setSelectedDate(selectedDate === key ? null : key);
   }
 
   return (

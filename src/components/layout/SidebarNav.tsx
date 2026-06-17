@@ -1,4 +1,5 @@
 'use client';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -13,6 +14,7 @@ import {
   Settings,
   Share2,
 } from 'lucide-react';
+import { useAuthStore } from '@/store/useAuthStore';
 import styles from './SidebarNav.module.scss';
 
 interface NavItem {
@@ -44,16 +46,35 @@ interface SidebarNavProps {
 export default function SidebarNav({ activeHref }: SidebarNavProps) {
   const pathname = usePathname();
   const active = activeHref ?? pathname;
+  const user = useAuthStore((s) => s.user);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const avatarUrl = mounted ? user?.avatarUrl : undefined;
+  const initials =
+    mounted && user
+      ? user.name
+          .split(' ')
+          .map((w) => w[0])
+          .join('')
+          .slice(0, 2)
+          .toUpperCase()
+      : 'S';
 
   return (
     <nav className={styles.sidebar} aria-label="Navegación principal">
       <div className={styles.sidebar__top}>
         <div
           className={styles['sidebar__project-avatar']}
-          aria-label="Proyecto Onboarding"
+          aria-label={mounted && user ? user.name : 'Usuario'}
           role="img"
         >
-          <span style={{ fontSize: 18, fontWeight: 700, color: '#1a1a1a' }}>S</span>
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={avatarUrl} alt="" width={44} height={36} />
+          ) : (
+            <span style={{ fontSize: 18, fontWeight: 700, color: '#1a1a1a' }}>{initials}</span>
+          )}
         </div>
 
         {mainNavItems.map((item) => {

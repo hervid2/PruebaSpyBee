@@ -178,40 +178,44 @@
 .avatars {
   display: flex;
   align-items: center;
-  gap: 2px;
+}
+
+.avatarWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 26px;
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+  background: $color-bg-surface;
+  flex-shrink: 0;
+
+  & + & {
+    margin-left: -8px;
+  }
 }
 
 .avatar {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
+  width: 28px;
+  height: 22px;
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
   background: $color-accent-gold;
   color: $color-text-primary;
   font-size: 11px;
   font-weight: $font-weight-semibold;
-  border: 2px solid $color-bg-surface;
   flex-shrink: 0;
-
-  & + & {
-    margin-left: -6px;
-  }
 }
 
 .avatarImg {
-  display: inline-block;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: 2px solid $color-bg-surface;
+  display: block;
+  width: 28px;
+  height: 22px;
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
   object-fit: cover;
   flex-shrink: 0;
-
-  & + & {
-    margin-left: -6px;
-  }
 }
 
 .avatarMore {
@@ -464,9 +468,9 @@
   }
 
   &__avatar {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
+    width: 28px;
+    height: 22px;
+    clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
     background: $color-accent-gold;
     color: $color-text-primary;
     display: inline-flex;

@@ -82,8 +82,8 @@
 }
 
 .topbar__user-avatar {
-  width: 36px;
-  height: 36px;
+  width: 42px;
+  height: 34px;
   clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
   background-color: $color-accent-gold;
   @include flex-center;

@@ -1,0 +1,270 @@
+@use '@/styles/abstracts/variables' as *;
+@use '@/styles/abstracts/mixins' as *;
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
+  z-index: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $space-lg;
+}
+
+.modal {
+  background: $color-bg-surface;
+  border-radius: $radius-lg;
+  border: 1px solid $color-border;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+  width: 100%;
+  max-width: 560px;
+  max-height: 82vh;
+  overflow-y: auto;
+  padding: $space-xl $space-xl $space-2xl;
+  display: flex;
+  flex-direction: column;
+  gap: $space-lg;
+  scrollbar-width: thin;
+  scrollbar-color: $color-border transparent;
+}
+
+// ── Header ──────────────────────────────────────────────
+.modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $space-sm;
+}
+
+.modal__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: $space-xs;
+}
+
+.modal__code {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  color: $color-text-secondary;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+.modal__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  color: $color-text-secondary;
+  cursor: pointer;
+  border-radius: $radius-md;
+  flex-shrink: 0;
+  transition:
+    background $transition-fast,
+    color $transition-fast;
+
+  &:hover {
+    background: $color-bg-muted;
+    color: $color-text-primary;
+  }
+}
+
+.modal__title {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  line-height: 1.3;
+  margin: 0;
+}
+
+// ── Badges ──────────────────────────────────────────────
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px $space-sm;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  border: 1px solid transparent;
+
+  &--priority-high {
+    background: rgba(229, 72, 77, 0.1);
+    color: #e5484d;
+    border-color: rgba(229, 72, 77, 0.25);
+  }
+  &--priority-medium {
+    background: rgba(245, 166, 35, 0.1);
+    color: #f5a623;
+    border-color: rgba(245, 166, 35, 0.25);
+  }
+  &--priority-low {
+    background: rgba(52, 199, 89, 0.1);
+    color: #34c759;
+    border-color: rgba(52, 199, 89, 0.25);
+  }
+  &--status-open {
+    background: rgba(52, 199, 89, 0.1);
+    color: #34c759;
+    border-color: rgba(52, 199, 89, 0.25);
+  }
+  &--status-on_pause {
+    background: rgba(245, 166, 35, 0.1);
+    color: #f5a623;
+    border-color: rgba(245, 166, 35, 0.25);
+  }
+  &--status-closed {
+    background: rgba(107, 114, 128, 0.1);
+    color: #6b7280;
+    border-color: rgba(107, 114, 128, 0.2);
+  }
+  &--type {
+    background: $color-bg-muted;
+    color: $color-text-secondary;
+    border-color: $color-border;
+  }
+}
+
+// ── Sections ────────────────────────────────────────────
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: $space-sm;
+  padding-top: $space-lg;
+  border-top: 1px solid $color-border;
+}
+
+.section__label {
+  font-size: 10px;
+  font-weight: $font-weight-bold;
+  color: $color-text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+
+.section__text {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  line-height: 1.65;
+  margin: 0;
+}
+
+// ── People ──────────────────────────────────────────────
+.peopleGrid {
+  display: flex;
+  flex-direction: column;
+  gap: $space-md;
+}
+
+.peopleGrid__role {
+  display: block;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin-bottom: $space-xs;
+}
+
+.userList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-xs;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: $color-bg-muted;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  padding: 3px $space-sm 3px 3px;
+}
+
+.chip__avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: $color-accent-gold;
+  color: $color-bg-dark;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: $font-weight-bold;
+  flex-shrink: 0;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+}
+
+.chip__name {
+  font-size: $font-size-xs;
+  color: $color-text-primary;
+  white-space: nowrap;
+  font-weight: $font-weight-semibold;
+}
+
+// ── Tags ────────────────────────────────────────────────
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-xs;
+}
+
+.tag {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  padding: 3px $space-sm;
+  border-radius: $radius-full;
+  border: 1px solid;
+}
+
+// ── Metadata grid ────────────────────────────────────────
+.metaGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-md $space-xl;
+
+  @media (max-width: 420px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.metaItem {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-xs;
+}
+
+.metaItem__icon {
+  color: $color-accent-gold;
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.metaItem__label {
+  display: block;
+  font-size: 10px;
+  color: $color-text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: $font-weight-semibold;
+}
+
+.metaItem__value {
+  display: block;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-semibold;
+  margin-top: 2px;
+}

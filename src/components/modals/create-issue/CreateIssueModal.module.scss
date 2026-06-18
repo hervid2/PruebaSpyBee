@@ -33,10 +33,12 @@
   flex-direction: column;
   animation: slideUp $transition-normal;
 
+  // The overlay keeps its padding at every breakpoint, so the modal never
+  // actually reaches the screen edges — square corners here just looked like
+  // a rendering bug against the backdrop, hence no border-radius override.
   @media (max-width: $breakpoint-tablet) {
     max-width: 100%;
     max-height: 100vh;
-    border-radius: 0;
     margin: 0;
   }
 }

@@ -34,6 +34,10 @@
 
   @media (max-width: #{$breakpoint-mobile - 1}) {
     margin-left: 0;
-    margin-bottom: 56px; // bottom nav height on mobile
+    // Subtract the bottom nav height directly instead of adding margin-bottom:
+    // margin doesn't shrink the box, so floating/absolute children anchored to
+    // its bottom edge (e.g. MapToolbar's "+" button) end up rendered below the
+    // viewport, hidden under the fixed bottom nav.
+    height: calc(100vh - #{$topbar-height} - 56px);
   }
 }

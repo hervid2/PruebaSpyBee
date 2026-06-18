@@ -13,6 +13,14 @@
   }
 }
 
+// Mobile + tablet combined (everything below desktop) — use when an element
+// must avoid collisions across the whole narrow range, not just one breakpoint.
+@mixin tablet-down {
+  @media (max-width: #{$breakpoint-desktop - 1}) {
+    @content;
+  }
+}
+
 @mixin desktop {
   @media (min-width: $breakpoint-desktop) {
     @content;

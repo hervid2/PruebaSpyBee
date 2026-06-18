@@ -40,7 +40,11 @@
   color: #fff;
   white-space: nowrap;
 
-  @include mobile {
+  // Applied across the whole mobile + tablet range (not just <480px): when
+  // absolutely centered, this title has no reserved space and overlaps the
+  // logo/actions as the viewport narrows. Making it a static flex item with
+  // min-width: 0 lets it truncate instead of colliding.
+  @include tablet-down {
     position: static;
     left: auto;
     transform: none;
@@ -67,6 +71,7 @@
   @include flex-center;
   gap: $space-sm;
   margin-left: auto;
+  flex-shrink: 0;
 }
 
 .topbar__lang-selector {

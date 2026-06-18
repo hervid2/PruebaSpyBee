@@ -9,7 +9,9 @@ export default function CreateIssueModal() {
   const activeModal = useModalStore((s) => s.activeModal);
   const close = useModalStore((s) => s.close);
   const dialogRef = useRef<HTMLDivElement>(null);
-  const isOpen = activeModal === 'create-issue';
+  // Stays mounted while the category-manager sub-modal is active, since it renders
+  // inside IssueForm and would otherwise unmount along with this parent.
+  const isOpen = activeModal === 'create-issue' || activeModal === 'category-manager';
 
   // Focus trap and Esc key handling
   useEffect(() => {

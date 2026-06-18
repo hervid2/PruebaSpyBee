@@ -2,11 +2,13 @@ import { test, expect } from '@playwright/test';
 import { loginViaUI } from './helpers/auth';
 
 test.describe('Autenticación', () => {
-  test('credenciales válidas redirigen a /mapa', async ({ page }) => {
+  test('credenciales válidas redirigen a /mapa', async ({ page, isMobile }) => {
     await loginViaUI(page);
     await expect(page).toHaveURL(/\/mapa/, { timeout: 10_000 });
-    // TopBar should show the logged-in user's name
-    await expect(page.getByText('Julian Lozano')).toBeVisible();
+    // TopBar shows the logged-in user's name on desktop; on mobile only the avatar is shown
+    if (!isMobile) {
+      await expect(page.getByText('Julian Lozano')).toBeVisible();
+    }
   });
 
   test('credenciales inválidas muestran error y permanecen en /login', async ({ page }) => {
@@ -24,8 +26,8 @@ test.describe('Autenticación', () => {
     page,
   }) => {
     await page.goto('/login');
-    await page.getByLabel('Email').fill('no-es-un-email');
-    await page.getByLabel('Contraseña').fill('spybee123');
+    await page.getByLabel('Email', { exact: true }).fill('no-es-un-email');
+    await page.getByLabel('Contraseña', { exact: true }).fill('spybee123');
     await page.getByRole('button', { name: 'Iniciar sesión' }).click();
     await expect(page.getByText('Introduce un email válido')).toBeVisible();
     await expect(page).toHaveURL(/\/login/);

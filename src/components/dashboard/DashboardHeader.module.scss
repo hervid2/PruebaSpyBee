@@ -146,6 +146,17 @@
     align-items: flex-start;
   }
 
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .period {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
   .period__btn {
     padding: 6px $space-sm;
   }

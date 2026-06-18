@@ -38,11 +38,12 @@ test.describe('Crear Incidencia — Mapa', () => {
     page,
   }) => {
     await page.getByRole('button', { name: 'Crear nueva incidencia' }).click();
-    await page.getByRole('button', { name: 'Crear' }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('button', { name: 'Crear', exact: true }).click();
     // At least one inline error alert must appear
     await expect(page.getByRole('alert').first()).toBeVisible();
     // Modal stays open
-    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(dialog).toBeVisible();
   });
 
   test('flujo completo: rellenar campos requeridos → Crear → modal se cierra', async ({ page }) => {
@@ -89,12 +90,12 @@ test.describe('Crear Incidencia — Dashboard', () => {
   });
 
   test('botón "Crear Incidencia" del header abre el modal', async ({ page }) => {
-    await page.getByRole('button', { name: 'Crear Incidencia' }).click();
+    await page.getByRole('button', { name: 'Crear nueva incidencia' }).click();
     await expect(page.getByRole('dialog', { name: 'Crear Incidencia' })).toBeVisible();
   });
 
   test('crear incidencia desde dashboard — modal se cierra correctamente', async ({ page }) => {
-    await page.getByRole('button', { name: 'Crear Incidencia' }).click();
+    await page.getByRole('button', { name: 'Crear nueva incidencia' }).click();
     const dialog = page.getByRole('dialog');
 
     await dialog.locator('#issue-title').fill('Humedad en cielo raso piso 2 — E2E');

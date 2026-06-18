@@ -32,14 +32,12 @@ export async function loginViaCookie(page: Page) {
       name: 'spybee-session',
       value: '1',
       url: 'http://localhost:3000',
-      path: '/',
       sameSite: 'Lax',
     },
     {
       name: 'spybee-auth',
       value: buildAuthCookieValue(),
       url: 'http://localhost:3000',
-      path: '/',
       sameSite: 'Lax',
     },
   ]);
@@ -54,7 +52,7 @@ export async function loginViaUI(
   password = 'spybee123',
 ) {
   await page.goto('/login');
-  await page.getByLabel('Email').fill(email);
-  await page.getByLabel('Contraseña').fill(password);
+  await page.getByLabel('Email', { exact: true }).fill(email);
+  await page.getByLabel('Contraseña', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Iniciar sesión' }).click();
 }

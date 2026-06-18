@@ -13,7 +13,7 @@ test.describe('Dashboard — Filtros de período', () => {
 
   test('cambiar período de 30d a 7d actualiza "Creadas en el período"', async ({ page }) => {
     // Go to 30d
-    await page.getByRole('button', { name: 'Últimos 30 días' }).click();
+    await page.getByRole('button', { name: 'Últ. 30 días' }).click();
     const card30 = page
       .getByRole('region', { name: 'Indicadores clave' })
       .locator('article')
@@ -21,7 +21,7 @@ test.describe('Dashboard — Filtros de período', () => {
     const value30 = Number(await card30.locator('p').last().textContent());
 
     // Switch to 7d
-    await page.getByRole('button', { name: 'Últimos 7 días' }).click();
+    await page.getByRole('button', { name: 'Últ. 7 días' }).click();
     const card7 = page
       .getByRole('region', { name: 'Indicadores clave' })
       .locator('article')
@@ -33,9 +33,9 @@ test.describe('Dashboard — Filtros de período', () => {
   });
 
   test('cambiar período actualiza el botón activo (aria-pressed)', async ({ page }) => {
-    const btn7 = page.getByRole('button', { name: 'Últimos 7 días' });
-    const btn30 = page.getByRole('button', { name: 'Últimos 30 días' });
-    const btn90 = page.getByRole('button', { name: 'Últimos 90 días' });
+    const btn7 = page.getByRole('button', { name: 'Últ. 7 días' });
+    const btn30 = page.getByRole('button', { name: 'Últ. 30 días' });
+    const btn90 = page.getByRole('button', { name: 'Últ. 90 días' });
 
     await btn7.click();
     await expect(btn7).toHaveAttribute('aria-pressed', 'true');

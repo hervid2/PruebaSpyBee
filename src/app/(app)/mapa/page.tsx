@@ -1,6 +1,7 @@
 import { getIncidents } from '@/services/incidents.service';
 import { IssuesStoreProvider } from '@/store/useIssuesStore';
 import MapaView from '@/components/map/MapaView';
+import IncidentDetailModal from '@/components/modals/incident-detail/IncidentDetailModal';
 
 export const metadata = {
   title: 'Mapa de Incidencias — Spybee',
@@ -12,6 +13,7 @@ export default async function MapaPage() {
   return (
     <IssuesStoreProvider initialIncidents={incidents}>
       <MapaView />
+      <IncidentDetailModal />
     </IssuesStoreProvider>
   );
 }

@@ -1,4 +1,23 @@
 @use '@/styles/abstracts/variables' as *;
+@use '@/styles/abstracts/mixins' as *;
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: $space-sm;
+  z-index: $z-toast;
+  padding: $space-sm $space-md;
+  background: $color-accent-gold;
+  color: $color-bg-dark;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  border-radius: $radius-md;
+  text-decoration: none;
+
+  &:focus {
+    left: $space-md;
+  }
+}
 
 .app-layout {
   display: flex;
@@ -7,14 +26,22 @@
 
 .app-layout__content {
   flex: 1;
+  // Sin min-width:0 un item flex no se encoge por debajo del ancho intrínseco de
+  // su contenido, así que una tabla ancha desborda el viewport en móvil y rompe
+  // el ancho que miden los gráficos Recharts (ResponsiveContainer).
+  min-width: 0;
   margin-top: $topbar-height;
   margin-left: $sidebar-width;
-  min-height: calc(100vh - #{$topbar-height});
+  height: calc(100vh - #{$topbar-height});
   display: flex;
   flex-direction: column;
 
   @media (max-width: #{$breakpoint-mobile - 1}) {
     margin-left: 0;
-    margin-bottom: 56px; // bottom nav height on mobile
+    // Subtract the bottom nav height directly instead of adding margin-bottom:
+    // margin doesn't shrink the box, so floating/absolute children anchored to
+    // its bottom edge (e.g. MapToolbar's "+" button) end up rendered below the
+    // viewport, hidden under the fixed bottom nav.
+    height: calc(100vh - #{$topbar-height} - 56px);
   }
 }

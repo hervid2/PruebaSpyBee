@@ -1,0 +1,66 @@
+@use '@/styles/abstracts/variables' as *;
+
+.section {
+  background: $color-bg-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: $space-lg;
+  box-shadow: $shadow-sm;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $space-lg;
+  gap: $space-md;
+  flex-wrap: wrap;
+
+  &__title {
+    font-size: $font-size-md;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    margin: 0;
+  }
+}
+
+.toggle {
+  display: flex;
+  background: $color-bg-muted;
+  border-radius: $radius-md;
+  padding: 2px;
+
+  &__btn {
+    padding: 5px $space-md;
+    border-radius: calc(#{$radius-md} - 2px);
+    border: none;
+    background: transparent;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    color: $color-text-secondary;
+    cursor: pointer;
+    transition: all $transition-fast;
+
+    &:hover {
+      color: $color-text-primary;
+    }
+
+    &--active {
+      background: $color-bg-surface;
+      color: $color-text-primary;
+      box-shadow: $shadow-sm;
+    }
+  }
+}
+
+.chart {
+  width: 100%;
+}
+
+.empty {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  text-align: center;
+  padding: $space-2xl 0;
+  margin: 0;
+}

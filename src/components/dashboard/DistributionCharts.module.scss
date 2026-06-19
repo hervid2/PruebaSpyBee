@@ -1,0 +1,52 @@
+@use '@/styles/abstracts/variables' as *;
+@use '@/styles/abstracts/mixins' as *;
+
+.distribution {
+  @include card;
+  padding: $space-xl;
+
+  @media (max-width: #{$breakpoint-tablet}) {
+    padding: $space-md;
+  }
+}
+
+.distribution__title {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $space-lg;
+}
+
+.distribution__charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-xl;
+
+  @media (max-width: #{$breakpoint-desktop}) {
+    gap: $space-lg;
+  }
+
+  @media (max-width: #{$breakpoint-tablet}) {
+    grid-template-columns: 1fr;
+    gap: $space-lg;
+  }
+}
+
+.distribution__chart {
+  @include flex-col;
+  gap: $space-md;
+  min-height: 300px;
+}
+
+.distribution__chart_title {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.distribution__empty {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  text-align: center;
+  padding: $space-xl 0;
+}

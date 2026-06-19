@@ -1,0 +1,35 @@
+@use '@/styles/abstracts/variables' as *;
+
+.view {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  background: $color-bg-muted;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  // Evita que un hijo ancho (tabla, gráfico) provoque scroll horizontal de toda
+  // la página en móvil; cada bloque ancho gestiona su propio overflow interno.
+  overflow-x: hidden;
+}
+
+.section {
+  padding: 0 $space-xl $space-xl;
+
+  @media (max-width: #{$breakpoint-tablet}) {
+    padding: 0 $space-md $space-md;
+  }
+}
+
+.riskRow {
+  padding: 0 $space-xl $space-md;
+  background: $color-bg-surface;
+  border-bottom: 1px solid $color-border;
+
+  @media (max-width: #{$breakpoint-tablet}) {
+    padding: 0 $space-md $space-md;
+  }
+}

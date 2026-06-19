@@ -103,18 +103,18 @@
 }
 
 .option__avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: $radius-full;
+  width: 32px;
+  height: 26px;
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
   object-fit: cover;
   background: $color-border;
   flex-shrink: 0;
 }
 
 .option__avatar-placeholder {
-  width: 28px;
-  height: 28px;
-  border-radius: $radius-full;
+  width: 32px;
+  height: 26px;
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
   background: $color-accent-gold;
   display: flex;
   align-items: center;

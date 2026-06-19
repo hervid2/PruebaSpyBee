@@ -32,9 +32,12 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps
+      # Se construye SIN token de Mapbox a propósito: en CI el WebGL por software
+      # (swiftshader) hace que inicializar mapas reales sature la CPU y dispare el
+      # tiempo del job. Sin token, los componentes de mapa renderizan un fallback
+      # ligero (ver guards en useMapbox, HeatmapSection y LocationPicker) y los E2E
+      # —que no verifican el mapa— corren de forma rápida y determinista.
       - run: npm run build
-        env:
-          NEXT_PUBLIC_MAPBOX_TOKEN: ${{ secrets.NEXT_PUBLIC_MAPBOX_TOKEN }}
       - run: npm run test:e2e
       - uses: actions/upload-artifact@v4
         if: always()

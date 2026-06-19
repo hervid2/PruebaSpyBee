@@ -1,9 +1,22 @@
-export default function DashboardPage() {
+import { getIncidents } from '@/services/incidents.service';
+import { IssuesStoreProvider } from '@/store/useIssuesStore';
+import DashboardView from '@/components/dashboard/DashboardView';
+import IncidentDetailModal from '@/components/modals/incident-detail/IncidentDetailModal';
+
+// Dashboard consumes live incident data — never statically prerender
+export const dynamic = 'force-dynamic';
+
+export const metadata = {
+  title: 'Dashboard de Incidencias — Spybee',
+};
+
+export default async function DashboardPage() {
+  const incidents = await getIncidents();
+
   return (
-    <section style={{ padding: 32 }}>
-      <p style={{ color: '#8a8f98', fontSize: 14 }}>
-        Dashboard de Incidencias — próximamente (Día 5)
-      </p>
-    </section>
+    <IssuesStoreProvider initialIncidents={incidents}>
+      <DashboardView />
+      <IncidentDetailModal />
+    </IssuesStoreProvider>
   );
 }

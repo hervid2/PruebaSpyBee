@@ -5,7 +5,10 @@ const nextConfig = {
     includePaths: ['./src/styles'],
   },
   images: {
-    remotePatterns: [],
+    remotePatterns: [
+      { protocol: 'https', hostname: 'i.pravatar.cc' },
+      { protocol: 'https', hostname: 'picsum.photos' },
+    ],
   },
 };
 

@@ -1,0 +1,136 @@
+@use '@/styles/abstracts/variables' as *;
+@use '@/styles/abstracts/mixins' as *;
+
+.team {
+  @include card;
+  padding: $space-xl;
+
+  @media (max-width: #{$breakpoint-tablet}) {
+    padding: $space-md;
+  }
+}
+
+.team__title {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $space-lg;
+}
+
+.team__columns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $space-xl;
+
+  @media (max-width: #{$breakpoint-desktop}) {
+    gap: $space-lg;
+  }
+
+  @media (max-width: #{$breakpoint-tablet}) {
+    grid-template-columns: 1fr;
+    gap: $space-lg;
+  }
+}
+
+.team__col {
+  @include flex-col;
+  gap: $space-md;
+}
+
+.team__col_title {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  padding-bottom: $space-sm;
+  border-bottom: 1px solid $color-border;
+}
+
+.team__empty {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.team__row {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  align-items: center;
+  gap: $space-sm;
+  padding: $space-xs 0;
+}
+
+.team__user {
+  @include flex-center;
+  justify-content: flex-start;
+  gap: $space-xs;
+  min-width: 0;
+}
+
+.team__avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: $radius-full;
+  background: $color-bg-muted;
+  border: 1px solid $color-border;
+  @include flex-center;
+  font-size: 9px;
+  font-weight: $font-weight-bold;
+  color: $color-text-secondary;
+  flex-shrink: 0;
+}
+
+.team__name {
+  font-size: $font-size-xs;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+  @include text-truncate;
+}
+
+.team__bar_track {
+  height: 8px;
+  background: $color-bg-muted;
+  border-radius: $radius-full;
+  overflow: hidden;
+}
+
+.team__bar_fill {
+  height: 100%;
+  border-radius: $radius-full;
+  transition: width $transition-normal;
+
+  &--gold {
+    background: $color-accent-gold;
+  }
+
+  &--blue {
+    background: $color-info-blue;
+  }
+
+  &--red {
+    background: $color-priority-high;
+  }
+}
+
+.team__count_wrap {
+  @include flex-center;
+  gap: $space-xs;
+  justify-content: flex-end;
+  min-width: 32px;
+}
+
+.team__count {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.team__overdue_badge {
+  min-width: 16px;
+  height: 16px;
+  border-radius: $radius-full;
+  background: $color-priority-high;
+  color: #fff;
+  font-size: 9px;
+  font-weight: $font-weight-bold;
+  @include flex-center;
+  padding: 0 3px;
+}

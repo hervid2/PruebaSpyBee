@@ -2,13 +2,22 @@ import { differenceInDays, isAfter, isBefore, parseISO, format, startOfDay } fro
 import type { Incident } from '../models/incident.model';
 import type { DashboardFilters } from '../models/filters.model';
 import type { DashboardMetrics } from '../models/dashboard-metrics.model';
+import { MOCK_USERS } from '@/lib/constants/mock-users';
+
+const USER_COMPANY_MAP = new Map(MOCK_USERS.map((u) => [u.id, u.company]));
 
 function getPeriodRange(filters: DashboardFilters): { from: Date; to: Date } {
   const to = startOfDay(new Date());
   if (filters.period === 'custom' && filters.customRange) {
     return { from: parseISO(filters.customRange.from), to: parseISO(filters.customRange.to) };
   }
-  const days = filters.period === '7d' ? 7 : filters.period === '30d' ? 30 : 90;
+  if (filters.period === '6m') {
+    const from = new Date(to);
+    from.setMonth(from.getMonth() - 6);
+    return { from, to };
+  }
+  const daysMap: Record<string, number> = { '7d': 7, '15d': 15, '30d': 30, '90d': 90 };
+  const days = daysMap[filters.period] ?? 30;
   const from = new Date(to);
   from.setDate(from.getDate() - days);
   return { from, to };
@@ -38,6 +47,20 @@ export function getDashboardMetrics(
   if (filters.responsibleUser?.length) {
     filtered = filtered.filter((i) =>
       i.assignees.some((a) => filters.responsibleUser!.includes(a.id)),
+    );
+  }
+  if (filters.createdByCompany?.length) {
+    filtered = filtered.filter((i) => {
+      const company = USER_COMPANY_MAP.get(i.owner.id);
+      return company !== undefined && filters.createdByCompany!.includes(company);
+    });
+  }
+  if (filters.responsibleByCompany?.length) {
+    filtered = filtered.filter((i) =>
+      i.assignees.some((a) => {
+        const company = USER_COMPANY_MAP.get(a.id);
+        return company !== undefined && filters.responsibleByCompany!.includes(company);
+      }),
     );
   }
 
@@ -117,6 +140,7 @@ export function getDashboardMetrics(
 
   const typeMap = new Map<string, { typeName: string; count: number }>();
   filtered.forEach((i) => {
+    if (!i.type?.key) return;
     const prev = typeMap.get(i.type.key) ?? { typeName: i.type.name, count: 0 };
     prev.count += 1;
     typeMap.set(i.type.key, prev);
@@ -127,7 +151,7 @@ export function getDashboardMetrics(
 
   const tagMap = new Map<string, { tagName: string; tagColor: string; count: number }>();
   filtered.forEach((i) =>
-    i.tags.forEach((t) => {
+    (i.tags ?? []).filter(Boolean).forEach((t) => {
       const prev = tagMap.get(t.id) ?? { tagName: t.name, tagColor: t.color, count: 0 };
       prev.count += 1;
       tagMap.set(t.id, prev);
@@ -144,7 +168,7 @@ export function getDashboardMetrics(
   filtered
     .filter((i) => i.status === 'closed')
     .forEach((i) => {
-      i.assignees.forEach((a) => {
+      (i.assignees ?? []).filter(Boolean).forEach((a) => {
         const prev = resolverMap.get(a.id) ?? { closedCount: 0, totalDays: 0, user: a };
         prev.closedCount += 1;
         prev.totalDays += i.closingDate
@@ -156,6 +180,7 @@ export function getDashboardMetrics(
 
   const reporterMap = new Map<string, { createdCount: number; user: Incident['owner'] }>();
   filtered.forEach((i) => {
+    if (!i.owner?.id) return;
     const prev = reporterMap.get(i.owner.id) ?? { createdCount: 0, user: i.owner };
     prev.createdCount += 1;
     reporterMap.set(i.owner.id, prev);
@@ -169,7 +194,7 @@ export function getDashboardMetrics(
     .filter((i) => i.status === 'open')
     .forEach((i) => {
       const overdue = i.dueDate ? isBefore(parseISO(i.dueDate), today) : false;
-      i.assignees.forEach((a) => {
+      (i.assignees ?? []).filter(Boolean).forEach((a) => {
         const prev = workloadMap.get(a.id) ?? { openCount: 0, overdueCount: 0, user: a };
         prev.openCount += 1;
         if (overdue) prev.overdueCount += 1;

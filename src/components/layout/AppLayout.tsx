@@ -1,3 +1,8 @@
+/**
+ * Shared chrome for authenticated pages: fixed top bar, sidebar nav and the
+ * main content slot. Includes a skip link as the first focusable element for
+ * keyboard/screen-reader accessibility.
+ */
 import TopBar from './TopBar';
 import SidebarNav from './SidebarNav';
 import styles from './AppLayout.module.scss';

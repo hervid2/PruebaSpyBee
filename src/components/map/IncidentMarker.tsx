@@ -1,11 +1,18 @@
+/**
+ * Imperative DOM factory for a map marker. Mapbox markers take a raw HTMLElement
+ * (not React), so this builds the node directly: a priority-colored ring with a
+ * warning glyph, tagged with `data-incident-id` for click handling.
+ */
 import type { Incident } from '@/domain/models';
 
+// Ring color encodes priority at a glance.
 const PRIORITY_BORDER: Record<Incident['priority'], string> = {
   high: '#e5484d',
   medium: '#f5a623',
   low: '#34c759',
 };
 
+/** Builds the marker element for a single incident. */
 export function createMarkerElement(incident: Incident): HTMLElement {
   const el = document.createElement('div');
   el.className = 'incident-marker';

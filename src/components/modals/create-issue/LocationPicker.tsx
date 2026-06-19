@@ -1,4 +1,9 @@
 'use client';
+/**
+ * Location field for the create form. Pairs a click-to-pin / draggable Mapbox
+ * marker with manual lat/lng inputs that stay in sync, plus a free-text detail
+ * field. Emits coordinates and description back to the form.
+ */
 import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -40,8 +45,8 @@ export default function LocationPicker({
   const placeMarkerRef = useRef<((coords: Coordinates) => void) | null>(null);
 
   useEffect(() => {
-    // Sin token, mapbox-gl falla al cargar el estilo (401) y entra en un bucle de
-    // reintentos que satura el WebGL en CI. Igual que useMapbox, no inicializamos el mapa.
+    // Without a token, mapbox-gl fails to load the style (401) and retries in a
+    // loop that saturates WebGL in CI. Like useMapbox, skip init entirely.
     if (!containerRef.current || mapRef.current || !TOKEN) return;
 
     mapboxgl.accessToken = TOKEN;
@@ -100,6 +105,7 @@ export default function LocationPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Validate manual lat/lng entry, then sync the marker and recenter the map.
   function applyInputCoords(lat: number, lng: number) {
     if (isNaN(lat) || isNaN(lng)) return;
     if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return;

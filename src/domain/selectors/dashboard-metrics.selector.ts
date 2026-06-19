@@ -1,11 +1,19 @@
+/**
+ * Pure aggregation layer that turns raw incidents + active filters into the
+ * chart-ready {@link DashboardMetrics}. Kept framework-agnostic (no React) so
+ * it is trivially unit-testable and reusable; the dashboard hook simply
+ * memoizes its output.
+ */
 import { differenceInDays, isAfter, isBefore, parseISO, format, startOfDay } from 'date-fns';
 import type { Incident } from '../models/incident.model';
 import type { DashboardFilters } from '../models/filters.model';
 import type { DashboardMetrics } from '../models/dashboard-metrics.model';
 import { MOCK_USERS } from '@/lib/constants/mock-users';
 
+// Lookup table so company filters resolve in O(1) instead of scanning users.
 const USER_COMPANY_MAP = new Map(MOCK_USERS.map((u) => [u.id, u.company]));
 
+/** Resolves the active filter preset into a concrete `[from, to]` date range. */
 function getPeriodRange(filters: DashboardFilters): { from: Date; to: Date } {
   const to = startOfDay(new Date());
   if (filters.period === 'custom' && filters.customRange) {
@@ -23,6 +31,12 @@ function getPeriodRange(filters: DashboardFilters): { from: Date; to: Date } {
   return { from, to };
 }
 
+/**
+ * Computes every dashboard metric in a single pass over the incident list.
+ * @param incidents Full dataset (the selector applies the filters itself).
+ * @param filters   Active dashboard filters (status, priority, period…).
+ * @returns Aggregated metrics ready to bind directly to the chart components.
+ */
 export function getDashboardMetrics(
   incidents: Incident[],
   filters: DashboardFilters,
@@ -30,6 +44,7 @@ export function getDashboardMetrics(
   const today = startOfDay(new Date());
   const { from, to } = getPeriodRange(filters);
 
+  // Drop soft-deleted rows, then narrow by each active filter dimension.
   let filtered = incidents.filter((i) => !('deleted' in i && i.deleted));
 
   if (filters.status?.length) {
@@ -64,11 +79,13 @@ export function getDashboardMetrics(
     );
   }
 
+  // Subset created inside the selected window — basis for period-scoped KPIs.
   const inPeriod = filtered.filter((i) => {
     const created = parseISO(i.createdAt);
     return !isBefore(created, from) && !isAfter(created, to);
   });
 
+  // Headline KPIs.
   const openCount = filtered.filter((i) => i.status === 'open').length;
   const createdInPeriod = inPeriod.length;
   const closedInPeriod = inPeriod.filter((i) => i.status === 'closed').length;
@@ -100,6 +117,7 @@ export function getDashboardMetrics(
     count: filtered.filter((i) => i.priority === priority).length,
   }));
 
+  // Build a daily created/closed series, then accumulate a running backlog.
   const trendMap = new Map<string, { created: number; closed: number }>();
   inPeriod.forEach((i) => {
     const key = format(parseISO(i.createdAt), 'yyyy-MM-dd');
@@ -121,6 +139,7 @@ export function getDashboardMetrics(
   const sevenDaysFromNow = new Date(today);
   sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
 
+  // Forward-looking risk signals (overdue, stale, high-priority, due soon).
   const risk = {
     overdueToday: filtered.filter(
       (i) => i.status === 'open' && i.dueDate && isBefore(parseISO(i.dueDate), today),
@@ -138,6 +157,7 @@ export function getDashboardMetrics(
     ).length,
   };
 
+  // Group counts by incident type, sorted most-frequent first.
   const typeMap = new Map<string, { typeName: string; count: number }>();
   filtered.forEach((i) => {
     if (!i.type?.key) return;
@@ -161,6 +181,8 @@ export function getDashboardMetrics(
     .map(([tagId, { tagName, tagColor, count }]) => ({ tagId, tagName, tagColor, count }))
     .sort((a, b) => b.count - a.count);
 
+  // Team leaderboards: who closes (resolvers), who reports (reporters) and
+  // who currently carries open/overdue work (workload).
   const resolverMap = new Map<
     string,
     { closedCount: number; totalDays: number; user: Incident['owner'] }
@@ -202,10 +224,12 @@ export function getDashboardMetrics(
       });
     });
 
+  // Geo points (one per located incident) for the map heatmap layer.
   const heatmapPoints = filtered
     .filter((i) => i.coordinates !== null)
     .map((i) => ({ lat: i.coordinates!.lat, lng: i.coordinates!.lng, weight: 1 }));
 
+  // Daily creation tally for the calendar activity grid.
   const calMap = new Map<string, number>();
   filtered.forEach((i) => {
     const key = format(parseISO(i.createdAt), 'yyyy-MM-dd');

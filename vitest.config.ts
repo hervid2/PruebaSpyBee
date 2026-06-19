@@ -1,3 +1,8 @@
+/**
+ * Vitest configuration for unit tests. Runs in jsdom, scopes coverage to the
+ * pure logic layers (domain + store) with a 70% threshold, and excludes the
+ * Playwright `e2e/` suite which runs under its own runner.
+ */
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import path from 'path';

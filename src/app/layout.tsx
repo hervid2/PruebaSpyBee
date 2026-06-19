@@ -1,3 +1,7 @@
+/**
+ * Root layout for the whole app. Defines the `<html>`/`<body>` shell, loads the
+ * Inter font as a CSS variable and pulls in global styles — wraps every route.
+ */
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.scss';

@@ -1,4 +1,9 @@
 'use client';
+/**
+ * Accessible shell for the create-incident flow. Owns the dialog chrome,
+ * a focus trap, Escape-to-close and background-scroll locking, and delegates
+ * the actual fields to {@link IssueForm}. Driven by the modal store.
+ */
 import { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { useModalStore } from '@/store/useModalStore';
@@ -13,7 +18,7 @@ export default function CreateIssueModal() {
   // inside IssueForm and would otherwise unmount along with this parent.
   const isOpen = activeModal === 'create-issue' || activeModal === 'category-manager';
 
-  // Focus trap and Esc key handling
+  // Focus trap + Escape-to-close: keep keyboard focus cycling inside the dialog.
   useEffect(() => {
     if (!isOpen) return;
 

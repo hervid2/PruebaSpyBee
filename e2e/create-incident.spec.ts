@@ -1,3 +1,8 @@
+/**
+ * E2E coverage of the create-incident flow from both the map and dashboard:
+ * opening/closing the modal, validation on empty submit, the full happy path,
+ * the category sub-modal, and a mobile full-screen check. Logs in via cookie.
+ */
 import { test, expect } from '@playwright/test';
 import { loginViaCookie } from './helpers/auth';
 

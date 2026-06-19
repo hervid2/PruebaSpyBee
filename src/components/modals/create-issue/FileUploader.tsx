@@ -1,4 +1,9 @@
 'use client';
+/**
+ * Drag-and-drop attachment picker for the create form. Splits uploads into
+ * media vs. document tabs (each with its own accepted MIME types), previews
+ * images as thumbnails, and lifts the chosen `File[]` to the parent form.
+ */
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { UploadCloud, X, FileText, Video } from 'lucide-react';
@@ -19,6 +24,7 @@ const DOCUMENT_ACCEPT = {
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
 };
 
+/** True for images/videos; documents fall into the other tab. */
 const isMediaFile = (f: File) => f.type.startsWith('image/') || f.type.startsWith('video/');
 
 interface Props {

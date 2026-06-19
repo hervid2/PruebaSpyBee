@@ -1,3 +1,8 @@
+/**
+ * Static catalog of incident categories (ids mirror the real API). Feeds the
+ * category selector in the create form and labels charts in the dashboard;
+ * centralizing it keeps type ids/names consistent across the app.
+ */
 import type { IncidentType } from '@/domain/models';
 
 export const INCIDENT_TYPES: IncidentType[] = [

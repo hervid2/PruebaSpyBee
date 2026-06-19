@@ -1,4 +1,9 @@
 'use client';
+/**
+ * Interactive Mapbox map of all geolocated incidents. Owns the marker layer:
+ * rebuilds markers/popups when incidents change, auto-fits the viewport to
+ * them, and toggles the 2D/3D projection from the filters store.
+ */
 import { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -20,13 +25,13 @@ export default function MapboxViewer() {
   const incidents = useIssuesStore((s) => s.incidents);
   const is3D = useFiltersStore((s) => s.is3D);
 
-  // Sincronizar proyección 2D / 3D
+  // Sync the 2D/3D projection with the toolbar toggle.
   useEffect(() => {
     if (!mapRef.current || !isLoaded) return;
     mapRef.current.setProjection(is3D ? 'globe' : 'mercator');
   }, [is3D, isLoaded, mapRef]);
 
-  // Renderizar marcadores al cambiar incidencias o cuando el mapa carga
+  // Rebuild markers whenever incidents change or the map finishes loading.
   useEffect(() => {
     if (!mapRef.current || !isLoaded) return;
 
@@ -56,7 +61,7 @@ export default function MapboxViewer() {
         geoPoints.push([incident.coordinates!.lng, incident.coordinates!.lat]);
       });
 
-    // Ajustar la vista para mostrar todos los marcadores
+    // Frame the viewport so every marker is visible (fit bounds / fly to single).
     if (geoPoints.length > 1) {
       const bounds = geoPoints.reduce<mapboxgl.LngLatBounds>(
         (b, coord) => b.extend(coord),

@@ -1,3 +1,8 @@
+/**
+ * Provides and verifies a lightweight mapbox-gl mock. mapbox-gl needs WebGL,
+ * which jsdom lacks, so this stub stands in for the real library: the test
+ * confirms the mocked Map/Marker/Popup chainable API behaves as components expect.
+ */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('mapbox-gl', () => {

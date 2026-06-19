@@ -1,8 +1,14 @@
 'use client';
+/**
+ * Two donut charts side by side: incidents by status and by priority. Maps the
+ * metric counts to Recharts data and a fixed color/label scheme so both charts
+ * share one reusable {@link DonutChart} renderer.
+ */
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import styles from './StatusChartsRow.module.scss';
 
+// Fixed color/label maps keep chart semantics consistent across the app.
 const STATUS_COLORS: Record<string, string> = {
   open: '#34C759',
   on_pause: '#F5A623',
@@ -27,6 +33,7 @@ const PRIORITY_LABELS: Record<string, string> = {
   low: 'Baja',
 };
 
+/** Reusable donut + legend; renders one distribution (status or priority). */
 function DonutChart({
   title,
   data,

@@ -1,3 +1,8 @@
+/**
+ * Component tests for TagTreeSelect: rendering tags, select/deselect via node
+ * and chip, search filtering with an empty state, multi-select accumulation,
+ * and checkbox state for the controlled selection.
+ */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import TagTreeSelect from '@/components/modals/create-issue/TagTreeSelect';

@@ -1,4 +1,9 @@
 'use client';
+/**
+ * Top filter bar of the map view, recreating the Spybee toolbar: a date picker
+ * and a "last visits" slider bound to the map filters store. The Compare/BIM
+ * buttons are presentational placeholders matching the reference UI.
+ */
 import { PanelLeft, Filter } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -7,6 +12,7 @@ import styles from './MapFilterBar.module.scss';
 
 const VISIT_STOPS = [1, 2, 3, 4, 5];
 
+/** Formats the stored ISO date into a localized label for display. */
 function formatDisplayDate(isoDate: string): string {
   try {
     return format(parse(isoDate, 'yyyy-MM-dd', new Date()), 'dd MMM yyyy', { locale: es });

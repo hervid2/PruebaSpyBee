@@ -1,4 +1,9 @@
 'use client';
+/**
+ * Geo + temporal panel of the dashboard. Renders a Mapbox heatmap of incident
+ * density alongside the {@link CalendarActivity} grid; selecting a day swaps the
+ * heatmap for that day's individual markers, linking the two views.
+ */
 import { useRef, useEffect, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -22,10 +27,10 @@ export default function HeatmapSection() {
   const incidents = useIssuesStore((s) => s.incidents);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
-  // Map initialization — runs once
+  // Map initialization — runs once.
   useEffect(() => {
-    // Sin token, mapbox-gl falla al cargar el estilo (401) y reintenta en bucle,
-    // saturando el WebGL por software en CI. Igual que useMapbox, no inicializamos el mapa.
+    // Without a token, mapbox-gl fails to load the style (401) and retries in a
+    // loop, saturating software WebGL in CI. Like useMapbox, skip init entirely.
     if (!containerRef.current || mapRef.current || !TOKEN) return;
 
     mapboxgl.accessToken = TOKEN;
@@ -95,7 +100,7 @@ export default function HeatmapSection() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Update markers and heatmap visibility whenever incidents, selectedDate, or map loads
+  // Sync markers + heatmap visibility whenever incidents/selectedDate change.
   useEffect(() => {
     if (!mapRef.current || !isLoaded) return;
 

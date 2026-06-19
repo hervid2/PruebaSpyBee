@@ -1,3 +1,8 @@
+/**
+ * E2E coverage of the authentication flow: valid/invalid credentials, inline
+ * email validation, middleware route protection (redirect to /login), and a
+ * mobile-viewport smoke check. Exercises the real login form via the UI.
+ */
 import { test, expect } from '@playwright/test';
 import { loginViaUI } from './helpers/auth';
 

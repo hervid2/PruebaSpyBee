@@ -1,8 +1,14 @@
 'use client';
+/**
+ * Row of headline KPI cards (open, created, closed, closure rate, avg
+ * resolution, overdue). Reads pre-computed values from the metrics hook and
+ * presents them with accent colors and trend arrows — display-only.
+ */
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import styles from './KeyMetricsRow.module.scss';
 
+/** Single KPI tile: label, value and optional trend-annotated subtitle. */
 function MetricCard({
   label,
   value,

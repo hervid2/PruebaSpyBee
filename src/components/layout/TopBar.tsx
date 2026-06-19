@@ -1,4 +1,9 @@
 'use client';
+/**
+ * Global top bar: brand, current project name, language switcher, the user menu
+ * and the logout action. Reads the session from the auth store and gates
+ * user-specific UI behind a mounted flag to keep SSR and client markup in sync.
+ */
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';

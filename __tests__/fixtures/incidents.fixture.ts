@@ -1,3 +1,8 @@
+/**
+ * Deterministic incident dataset shared by the unit tests. Each entry is shaped
+ * to exercise a specific metric branch (overdue, stale, closed-with-date, due
+ * soon…), so the selector assertions stay stable and self-documenting.
+ */
 import type { Incident } from '@/domain/models/incident.model';
 
 const baseDate = '2026-05-01T10:00:00.000Z';
@@ -17,6 +22,7 @@ const typeStructural = { id: 't1', key: 'structural', name: 'Estructural', name_
 const typePlumbing = { id: 't2', key: 'plumbing', name: 'Hidrosanitario', name_en: 'Plumbing' };
 const project = { id: 'proj_1', name: 'Proyecto Onboarding' };
 
+/** Builds a valid incident from sensible defaults, overriding only what a case needs. */
 function makeIncident(overrides: Partial<Incident>): Incident {
   return {
     id: crypto.randomUUID(),

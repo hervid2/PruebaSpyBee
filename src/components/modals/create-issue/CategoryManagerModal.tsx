@@ -1,4 +1,9 @@
 'use client';
+/**
+ * Nested sub-modal for managing custom incident categories. Opened from within
+ * {@link IssueForm}; closing it reopens the create-issue modal rather than
+ * dismissing the whole flow. Added categories persist for the browser session.
+ */
 import { useState, useRef, useEffect } from 'react';
 import { X, Trash2 } from 'lucide-react';
 import { useModalStore } from '@/store/useModalStore';
@@ -9,7 +14,7 @@ interface Category {
   name: string;
 }
 
-// Simple local state for custom categories (shared via module scope to persist within session)
+// Module-scoped list so custom categories survive remounts within a session.
 const sessionCategories: Category[] = [];
 
 export default function CategoryManagerModal() {

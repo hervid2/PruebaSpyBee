@@ -1,4 +1,9 @@
 'use client';
+/**
+ * Two distribution visualizations: a radar chart of incidents per category and
+ * a treemap of incidents per tag. Both read the top-N aggregates from the
+ * metrics hook and degrade gracefully to an empty state when there is no data.
+ */
 import {
   RadarChart,
   PolarGrid,
@@ -22,6 +27,7 @@ interface TreemapContentProps {
   fill?: string;
 }
 
+/** Custom treemap cell: colored rect with name/value labels when it fits. */
 function TreemapContent({
   x = 0,
   y = 0,
@@ -31,7 +37,7 @@ function TreemapContent({
   value = 0,
   fill = '#3b82f6',
 }: TreemapContentProps) {
-  if (width < 30 || height < 20) return null;
+  if (width < 30 || height < 20) return null; // skip labels on tiny cells
   return (
     <g>
       <rect x={x} y={y} width={width} height={height} fill={fill} rx={4} opacity={0.85} />

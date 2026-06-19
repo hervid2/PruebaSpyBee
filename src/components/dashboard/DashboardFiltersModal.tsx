@@ -1,4 +1,9 @@
 'use client';
+/**
+ * Advanced dashboard filters modal. Edits a local draft of the filter set
+ * (period, status, priority, user/company) and only commits it to the filters
+ * store on "Apply", so the dashboard doesn't re-render on every keystroke.
+ */
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useModalStore } from '@/store/useModalStore';
@@ -35,6 +40,7 @@ function toggle<T>(arr: T[] | undefined, item: T): T[] {
   return current.includes(item) ? current.filter((x) => x !== item) : [...current, item];
 }
 
+/** Reusable row of toggleable chips for a single multi-select filter. */
 function ChipGroup<T extends string>({
   options,
   selected,

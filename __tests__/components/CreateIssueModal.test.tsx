@@ -1,3 +1,9 @@
+/**
+ * Integration test for the full create-incident flow. Renders the modal over an
+ * isolated issues store and drives it end to end: open/close, validation errors,
+ * and a successful submit that adds the incident to the store. mapbox-gl is
+ * mocked because the nested LocationPicker would otherwise need WebGL.
+ */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import CreateIssueModal from '@/components/modals/create-issue/CreateIssueModal';

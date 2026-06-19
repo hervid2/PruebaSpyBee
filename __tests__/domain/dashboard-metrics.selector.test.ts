@@ -1,3 +1,8 @@
+/**
+ * Unit tests for the dashboard metrics selector — the app's core business logic.
+ * Time is frozen so every period/risk calculation is deterministic; each block
+ * pins one metric group (KPIs, byStatus, risk, team, filters…) to the fixtures.
+ */
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { getDashboardMetrics } from '@/domain/selectors/dashboard-metrics.selector';
 import { FIXTURE_INCIDENTS } from '../fixtures/incidents.fixture';

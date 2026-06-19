@@ -1,9 +1,15 @@
 'use client';
+/**
+ * Searchable, hierarchical tag picker for the create form. Supports parent/child
+ * tags with tri-state checkboxes (checked / indeterminate / unchecked) and emits
+ * the flat list of selected ids back to React Hook Form.
+ */
 import { useState } from 'react';
 import { ChevronRight, X } from 'lucide-react';
 import type { Tag } from '@/domain/models';
 import styles from './TagTreeSelect.module.scss';
 
+/** A tag that may contain nested child tags. */
 interface TagNode extends Tag {
   children?: Tag[];
 }
@@ -51,6 +57,7 @@ export default function TagTreeSelect({ tags, selectedIds, onChange }: Props) {
     .flatMap((t) => [t, ...(t.children ?? [])])
     .filter((t) => selectedIds.includes(t.id));
 
+  // Derive a parent's checkbox state from how many of its children are selected.
   const getCheckState = (node: TagNode): 'checked' | 'indeterminate' | 'unchecked' => {
     if (!node.children?.length) return selectedIds.includes(node.id) ? 'checked' : 'unchecked';
     const childIds = node.children.map((c) => c.id);

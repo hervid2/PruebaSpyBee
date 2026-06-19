@@ -1,6 +1,12 @@
+/**
+ * Unit tests for the create-incident Zod schema. Covers the happy path plus
+ * each validation rule (required fields, length caps, past-date rejection,
+ * enum and coordinate bounds) to lock the form's contract.
+ */
 import { describe, it, expect } from 'vitest';
 import { issueFormSchema } from '@/lib/validators/issue-form.schema';
 
+// Date helpers relative to "now" so the past/future due-date rules stay valid over time.
 const tomorrow = () => {
   const d = new Date();
   d.setDate(d.getDate() + 1);

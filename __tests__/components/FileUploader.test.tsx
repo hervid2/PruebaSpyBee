@@ -1,3 +1,8 @@
+/**
+ * Component tests for FileUploader: tab switching (media/documents), empty
+ * states, image-vs-icon previews, multi-file rendering and removal. Stubs
+ * URL.createObjectURL since jsdom doesn't implement it.
+ */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import FileUploader from '@/components/modals/create-issue/FileUploader';

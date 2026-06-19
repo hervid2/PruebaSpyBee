@@ -1,4 +1,9 @@
 'use client';
+/**
+ * Login screen. Validates credentials with React Hook Form + Zod, calls the
+ * auth service, persists the session via the auth store, and redirects to the
+ * map. Includes accessibility hooks (aria-invalid/alert) and a demo-credentials panel.
+ */
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,6 +14,7 @@ import { login } from '@/services/auth.service';
 import { useAuthStore } from '@/store/useAuthStore';
 import styles from './Login.module.scss';
 
+// Local schema — only shape-validates the inputs; real auth happens in the service.
 const loginSchema = z.object({
   email: z.string().email('Introduce un email válido'),
   password: z.string().min(1, 'La contraseña es requerida'),
@@ -28,6 +34,7 @@ export default function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoginForm>({ resolver: zodResolver(loginSchema) });
 
+  // Authenticate, store the session, then navigate; surface failures inline.
   const onSubmit = async (data: LoginForm) => {
     setServerError('');
     try {

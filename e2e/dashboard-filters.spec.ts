@@ -1,3 +1,8 @@
+/**
+ * E2E coverage of the dashboard's interactive filtering: period switcher,
+ * advanced filters modal, risk-indicator chips, and table pagination, plus a
+ * mobile smoke test. Logs in via cookie and asserts on the rendered KPIs/table.
+ */
 import { test, expect } from '@playwright/test';
 import { loginViaCookie } from './helpers/auth';
 

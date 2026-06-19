@@ -1,8 +1,14 @@
 'use client';
+/**
+ * Clickable risk chips (overdue, stale, high-priority, due-soon) with live
+ * counts. Acts as a controlled segmented filter: selecting a chip lifts the
+ * choice to {@link DashboardView}, which narrows the critical-issues table.
+ */
 import { AlertTriangle, Clock, Flame, CalendarClock } from 'lucide-react';
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import styles from './RiskIndicators.module.scss';
 
+/** Selected risk dimension, or `null` when no risk filter is active. */
 export type RiskFilter =
   | 'overdueToday'
   | 'staleSince7d'

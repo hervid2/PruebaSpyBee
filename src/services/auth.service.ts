@@ -1,12 +1,18 @@
+/**
+ * Mock authentication service. With no real backend, it validates credentials
+ * against an in-memory table and simulates network latency, returning the
+ * shape a real `/auth/login` endpoint would. The auth store consumes it.
+ */
 import { MOCK_USERS } from '@/lib/constants/mock-users';
 import type { AuthUser } from '@/store/useAuthStore';
 
+/** Payload returned on a successful login: the user plus a session token. */
 interface LoginResult {
   user: AuthUser;
   token: string;
 }
 
-// Simulated credential store — password matches company convention
+// Simulated credential store — password matches company convention.
 const CREDENTIALS: Record<string, string> = {
   'julian.lozano@spybee.io': 'spybee123',
   'julian.rico@spybee.io': 'spybee123',
@@ -20,8 +26,12 @@ const CREDENTIALS: Record<string, string> = {
   'maria.torres@pruebaempresa.com': 'prueba123',
 };
 
+/**
+ * Validates credentials and resolves the matching user.
+ * @throws Error with a user-facing message when credentials are invalid.
+ */
 export async function login(email: string, password: string): Promise<LoginResult> {
-  await new Promise((r) => setTimeout(r, 450));
+  await new Promise((r) => setTimeout(r, 450)); // simulate network round-trip
 
   const expected = CREDENTIALS[email.toLowerCase().trim()];
   if (!expected || expected !== password) {
@@ -43,6 +53,7 @@ export async function login(email: string, password: string): Promise<LoginResul
   return { user, token: crypto.randomUUID() };
 }
 
+/** Simulated sign-out; the store clears the session once this resolves. */
 export async function logout(): Promise<void> {
   await new Promise((r) => setTimeout(r, 100));
 }

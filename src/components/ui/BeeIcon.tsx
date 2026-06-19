@@ -1,8 +1,13 @@
+/**
+ * Inline SVG bee mascot used as the Spybee brand mark in the nav/top bar.
+ * Self-contained (no asset request) and `aria-hidden`, since it is decorative.
+ */
 interface BeeIconProps {
   size?: number;
   className?: string;
 }
 
+/** Renders the bee logo at the given pixel size. */
 export default function BeeIcon({ size = 22, className }: BeeIconProps) {
   return (
     <svg

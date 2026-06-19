@@ -1,5 +1,11 @@
+/**
+ * Seed directory of users across the three demo companies. Acts as the stand-in
+ * "users" table: powers login resolution, assignee/observer pickers, and the
+ * company-based dashboard filters.
+ */
 import type { UserRef } from '@/domain/models';
 
+/** A directory user: base {@link UserRef} plus company and optional role. */
 export type MockUserWithCompany = UserRef & { company: string; role?: string };
 
 export const MOCK_USERS: MockUserWithCompany[] = [

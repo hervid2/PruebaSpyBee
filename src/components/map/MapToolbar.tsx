@@ -19,6 +19,11 @@ import { useFiltersStore } from '@/store/useFiltersStore';
 import { useModalStore } from '@/store/useModalStore';
 import styles from './MapToolbar.module.scss';
 
+/**
+ * Floating map toolbar replicating the Spybee chrome. Two controls are wired:
+ * the 2D/3D projection toggle (filters store) and the "create incident" action
+ * (modal store); the remaining icon buttons are presentational placeholders.
+ */
 export default function MapToolbar() {
   const is3D = useFiltersStore((s) => s.is3D);
   const toggle3D = useFiltersStore((s) => s.toggle3D);
@@ -26,7 +31,7 @@ export default function MapToolbar() {
 
   return (
     <>
-      {/* Grupo inferior izquierdo: controles de navegación */}
+      {/* Bottom-left group: navigation controls */}
       <div
         className={styles['toolbar-left']}
         role="toolbar"
@@ -66,7 +71,7 @@ export default function MapToolbar() {
         </button>
       </div>
 
-      {/* Grupo inferior central: modo de visualización */}
+      {/* Bottom-center group: view mode (2D/3D + capture tools) */}
       <div className={styles['toolbar-center']} role="toolbar" aria-label="Modo de visualización">
         <div
           className={styles['toolbar__toggle-group']}
@@ -123,7 +128,7 @@ export default function MapToolbar() {
         </button>
       </div>
 
-      {/* Grupo derecho: acción primaria y herramientas */}
+      {/* Right group: primary action (create) and tool shortcuts */}
       <div className={styles['toolbar-right']} role="toolbar" aria-label="Herramientas y acciones">
         <button
           className={styles['toolbar__primary-btn']}

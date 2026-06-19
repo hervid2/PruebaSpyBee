@@ -1,3 +1,8 @@
+/**
+ * Authentication helpers shared by the Playwright specs. Offers a fast
+ * cookie-injection login (default) and a full UI login used only where the
+ * login form itself is under test.
+ */
 import type { Page } from '@playwright/test';
 
 // Builds the exact cookie value that useAuthStore.persist writes via its custom cookieStorage.

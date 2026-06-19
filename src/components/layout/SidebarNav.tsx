@@ -1,4 +1,9 @@
 'use client';
+/**
+ * Vertical icon navigation rail. Highlights the active route from the current
+ * pathname and shows the signed-in user's avatar at the top. Avatar/initials
+ * render only after mount to avoid an SSR hydration mismatch (auth is cookie-based).
+ */
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -24,6 +29,8 @@ interface NavItem {
   label: string;
 }
 
+// Primary destinations; only /dashboard and /mapa are implemented, the rest
+// mirror the reference Spybee UI as navigational placeholders.
 const mainNavItems: NavItem[] = [
   { href: '/', icon: <Home size={20} />, label: 'Inicio' },
   { href: '/dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },

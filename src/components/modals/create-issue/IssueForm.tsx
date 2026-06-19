@@ -1,4 +1,10 @@
 'use client';
+/**
+ * The create-incident form itself. Orchestrates React Hook Form + Zod validation
+ * and the custom field widgets (tags, people, location, files), then maps the
+ * form values to a {@link CreateIncidentDto}, calls the service and pushes the
+ * resulting incident into the issues store.
+ */
 import { useState } from 'react';
 import { useForm, Controller, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,6 +23,7 @@ import FileUploader from './FileUploader';
 import type { Tag } from '@/domain/models';
 import styles from './IssueForm.module.scss';
 
+// Static demo data standing in for catalogs/session that a backend would supply.
 const MOCK_TAGS: Tag[] = [
   { id: '4bf3f690ae021229ec15f203', name: 'Reproceso', color: '#EF4444' },
   { id: '2a544044d7c705a56d0cf6c5', name: 'Acabados', color: '#6366F1' },
@@ -75,6 +82,7 @@ export default function IssueForm({ onClose }: Props) {
   const coordinates = watch('coordinates');
   const locationDescription = watch('locationDescription');
 
+  // Resolve selected ids back to full objects, build the DTO, persist, reset.
   const onSubmit = async (data: IssueFormValues) => {
     const type = INCIDENT_TYPES.find((t) => t.id === data.typeId)!;
     const assignees = MOCK_USERS.filter((u) => (data.assigneeIds ?? []).includes(u.id));

@@ -1,3 +1,8 @@
+/**
+ * Unit tests for the filters store. Verifies each action updates only its slice
+ * (map date, last-visits, 3D toggle, dashboard filter merge/reset) without
+ * mutating unrelated state; the store is reset before each case.
+ */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useFiltersStore } from '@/store/useFiltersStore';
 

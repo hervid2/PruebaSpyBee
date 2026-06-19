@@ -1,8 +1,14 @@
 'use client';
+/**
+ * Global authentication store. Persists the session to a cookie (not
+ * localStorage) so the Next.js middleware can read it server-side and gate
+ * protected routes. Components subscribe here for the current user and auth state.
+ */
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { UserRef } from '@/domain/models';
 
+/** Authenticated user enriched with role and company beyond the base ref. */
 export interface AuthUser extends UserRef {
   role: string;
   company: string;
@@ -16,6 +22,11 @@ interface AuthState {
   logout: () => void;
 }
 
+/**
+ * Custom persist storage backed by `document.cookie`. Also writes a companion
+ * `spybee-session` flag cookie that the middleware checks to authorize routes.
+ * SSR-safe: every accessor no-ops when `document` is unavailable.
+ */
 function cookieStorage() {
   return createJSONStorage<AuthState>(() => ({
     getItem(name) {

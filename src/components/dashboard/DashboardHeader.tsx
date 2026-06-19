@@ -1,4 +1,9 @@
 'use client';
+/**
+ * Dashboard top bar: breadcrumb, the period quick-switcher (7d…6m), and the
+ * "Filters" / "Create incident" actions. Reads/writes the active period in the
+ * filters store and opens modals via the modal store.
+ */
 import { Filter, Plus, ChevronRight } from 'lucide-react';
 import { format, subDays, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -7,6 +12,7 @@ import { useModalStore } from '@/store/useModalStore';
 import type { DashboardPeriod } from '@/domain/models/filters.model';
 import styles from './DashboardHeader.module.scss';
 
+// Selectable period presets shown as the quick-switch buttons.
 const PERIODS: { value: DashboardPeriod; label: string }[] = [
   { value: '7d', label: 'Últ. 7 días' },
   { value: '15d', label: 'Últ. 15 días' },
@@ -15,6 +21,7 @@ const PERIODS: { value: DashboardPeriod; label: string }[] = [
   { value: '6m', label: 'Últ. 6 meses' },
 ];
 
+/** Maps a period preset to a concrete date range (for the header label only). */
 function getPeriodRange(period: DashboardPeriod): { from: Date; to: Date } {
   const to = startOfDay(new Date());
   if (period === '6m') {
@@ -28,6 +35,7 @@ function getPeriodRange(period: DashboardPeriod): { from: Date; to: Date } {
   return { from, to };
 }
 
+/** Human-readable "from – to" label for the currently selected period. */
 function formatDateRange(period: DashboardPeriod): string {
   const { from, to } = getPeriodRange(period);
   const fromStr = format(from, "d 'de' MMM yyyy", { locale: es });

@@ -1,3 +1,8 @@
+/**
+ * Holds the UI filter state shared across the dashboard and map views (active
+ * period, status/priority filters, map date and 3D toggle). Decoupling filters
+ * from the data lets the metrics selector recompute reactively as they change.
+ */
 import { create } from 'zustand';
 import type { MapFilters, DashboardFilters } from '@/domain/models';
 

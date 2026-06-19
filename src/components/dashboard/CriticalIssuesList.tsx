@@ -1,4 +1,10 @@
 'use client';
+/**
+ * Paginated, sortable incidents table — the dashboard's operational drill-down.
+ * Combines three filter layers: global dashboard filters, the risk chip lifted
+ * from {@link DashboardView}, and its own in-table filter modal. All filtering,
+ * sorting and paging happen client-side over the issues store.
+ */
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight, ArrowUpDown, SlidersHorizontal, X } from 'lucide-react';
@@ -44,10 +50,12 @@ const DEFAULT_TABLE_FILTERS: TableFilters = {
   due: 'all',
 };
 
+/** Adds/removes an item from a multi-select filter array (immutably). */
 function toggle<T>(arr: T[], item: T): T[] {
   return arr.includes(item) ? arr.filter((x) => x !== item) : [...arr, item];
 }
 
+/** Localized relative due-date label, flagged when the date is in the past. */
 function dueDateText(dueDate: string | null): string {
   if (!dueDate) return '—';
   const due = parseISO(dueDate);
@@ -56,6 +64,7 @@ function dueDateText(dueDate: string | null): string {
   return isOverdue ? `Vencida ${distance}` : `Vence ${distance}`;
 }
 
+/** Avatar image with a graceful initials fallback when the URL fails to load. */
 function UserAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string }) {
   const [imgError, setImgError] = useState(false);
   if (avatarUrl && !imgError) {
@@ -79,6 +88,7 @@ function UserAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string }) {
   );
 }
 
+/** In-table filter dialog; edits a local draft and commits it on "Apply". */
 function TableFiltersModal({
   filters,
   onChange,
@@ -251,6 +261,8 @@ export default function CriticalIssuesList({ riskFilter }: Props) {
     tableFilters.createdBy.length +
     (tableFilters.due !== 'all' ? 1 : 0);
 
+  // Pipeline: global filters → risk filter → table filters → sort. Memoized so
+  // it only recomputes when one of its inputs actually changes.
   const { filtered } = useMemo(() => {
     let list = incidents.filter((i) => {
       if (dashboardFilters.status?.length && !dashboardFilters.status.includes(i.status))

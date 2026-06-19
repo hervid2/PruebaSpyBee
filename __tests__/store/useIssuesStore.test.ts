@@ -1,3 +1,8 @@
+/**
+ * Unit tests for the issues store factory. Asserts seeding, the prepend
+ * (LIFO) ordering of addIncident, and that existing incidents are never
+ * mutated — testing the vanilla factory directly, no React Provider needed.
+ */
 import { describe, it, expect } from 'vitest';
 import { createIssuesStore } from '@/store/useIssuesStore';
 import type { Incident } from '@/domain/models';

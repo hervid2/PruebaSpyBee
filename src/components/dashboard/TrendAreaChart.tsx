@@ -1,4 +1,9 @@
 'use client';
+/**
+ * Stacked area chart of created vs. closed incidents over time, with a running
+ * backlog line. Lets the user re-bucket the daily series into day/week/month
+ * granularity client-side, so no extra data fetch is needed.
+ */
 import { useState, useMemo } from 'react';
 import {
   AreaChart,
@@ -17,6 +22,7 @@ import styles from './TrendAreaChart.module.scss';
 
 type Granularity = 'day' | 'week' | 'month';
 
+/** Re-buckets the daily trend into day/week/month and recomputes the backlog. */
 function aggregateTrend(
   trend: { date: string; created: number; closed: number; backlog: number }[],
   granularity: Granularity,

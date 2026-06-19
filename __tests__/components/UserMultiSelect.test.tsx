@@ -1,3 +1,8 @@
+/**
+ * Component tests for UserMultiSelect: company grouping, select/deselect via
+ * option and chip, search by name/company with an empty state, aria-selected
+ * state and a custom placeholder.
+ */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import UserMultiSelect from '@/components/modals/create-issue/UserMultiSelect';

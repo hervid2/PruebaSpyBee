@@ -1,4 +1,9 @@
 'use client';
+/**
+ * Searchable multi-select for people, grouped by company. Used for both the
+ * assignees and observers fields; matches on name/email/company and returns the
+ * selected user ids to the form. Selected users surface as removable chips.
+ */
 import { useState } from 'react';
 import { Check, X } from 'lucide-react';
 import type { MockUserWithCompany } from '@/lib/constants/mock-users';

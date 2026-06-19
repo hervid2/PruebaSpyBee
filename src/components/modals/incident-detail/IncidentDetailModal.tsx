@@ -1,4 +1,10 @@
 'use client';
+/**
+ * Read-only detail view for a single incident, shared by the map and dashboard.
+ * Reads the selected id from the detail store and resolves the full incident
+ * from the issues store. Also bridges the imperative Mapbox popup links by
+ * intercepting their clicks at the document level to open the modal.
+ */
 import { useEffect } from 'react';
 import { X, MapPin, Calendar, Clock, FileText } from 'lucide-react';
 import { format, parseISO, formatDistanceToNow } from 'date-fns';
@@ -15,6 +21,7 @@ const STATUS_LABELS: Record<string, string> = {
   closed: 'Cerrada',
 };
 
+/** Small avatar + name chip reused for owner, assignees and observers. */
 function UserChip({ user }: { user: UserRef }) {
   return (
     <div className={styles.chip}>

@@ -1,5 +1,11 @@
+/**
+ * Zod schema validating the create-incident form. Wired into React Hook Form
+ * via `zodResolver`, it is the single source of validation rules and provides
+ * the inferred {@link IssueFormValues} type used across the form components.
+ */
 import { z } from 'zod';
 
+/** Local midnight, used to reject due dates earlier than the current day. */
 const today = () => {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
@@ -48,4 +54,5 @@ export const issueFormSchema = z.object({
   locationDescription: z.string().max(500).nullable().optional(),
 });
 
+/** Strongly-typed form values inferred from the schema. */
 export type IssueFormValues = z.infer<typeof issueFormSchema>;

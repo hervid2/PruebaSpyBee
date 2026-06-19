@@ -36,6 +36,13 @@ Thumbs.db
 /coverage
 /playwright-report
 /test-results
+/playwright/.cache/
+# Test artifacts: screenshots, snapshot diffs, videos and traces
+*-actual.png
+*-diff.png
+*.spec.ts-snapshots/
+/screenshots/
+*.trace.zip
 
 # Misc
 *.log

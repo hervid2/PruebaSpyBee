@@ -1,3 +1,8 @@
+/**
+ * Data-access layer for incidents. Emulates a REST API on top of a static
+ * mock dataset so the rest of the app codes against async service calls
+ * exactly as it would against a real backend.
+ */
 import type { Incident, CreateIncidentDto, Media } from '@/domain/models/incident.model';
 
 // The signed Supabase URL provided by the recruiter.
@@ -52,6 +57,7 @@ export async function createIncident(
 ): Promise<Incident> {
   const now = new Date().toISOString();
 
+  // Turn raw File objects into Media records with local blob URLs for preview.
   const mediaItems: Media[] = dto.media.map((file, i) => ({
     id: `local_${Date.now()}_${i}`,
     name: file.name,

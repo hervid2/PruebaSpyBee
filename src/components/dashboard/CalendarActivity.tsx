@@ -1,4 +1,9 @@
 'use client';
+/**
+ * GitHub-style monthly activity calendar. Color-codes each day by incident
+ * volume and, when a day is clicked, lists that day's incidents. Works both
+ * controlled (date lifted by {@link HeatmapSection}) and standalone.
+ */
 import { useState } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -22,6 +27,7 @@ const STATUS_LABELS: Record<string, string> = {
   closed: 'Cerrada',
 };
 
+/** Maps a daily count to a heat-intensity CSS class (none/low/mid/high). */
 function getIntensity(count: number): string {
   if (count === 0) return '';
   if (count <= 2) return styles['calendar__day--low'];
@@ -35,9 +41,10 @@ export default function CalendarActivity({
   selectedDate: controlledDate,
   onSelectDate,
 }: CalendarActivityProps) {
-  const [current, setCurrent] = useState(() => new Date());
+  const [current, setCurrent] = useState(() => new Date()); // visible month
   const [internalDate, setInternalDate] = useState<string | null>(null);
 
+  // Controlled when a `selectedDate` prop is passed, otherwise self-managed.
   const selectedDate = controlledDate !== undefined ? controlledDate : internalDate;
 
   function setSelectedDate(val: string | null) {

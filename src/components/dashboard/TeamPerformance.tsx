@@ -1,7 +1,13 @@
 'use client';
+/**
+ * Team performance panel: three ranked bar lists — top resolvers, top reporters
+ * and current workload (with an overdue badge). Bars are normalized against the
+ * column max so each list reads as a relative leaderboard.
+ */
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import styles from './TeamPerformance.module.scss';
 
+/** Round initials avatar derived from the user's name. */
 function Avatar({ name }: { name: string }) {
   const initials = name
     .split(' ')
@@ -25,6 +31,7 @@ interface BarRowProps {
   badge?: number;
 }
 
+/** One leaderboard entry: avatar, accessible progress bar and count. */
 function BarRow({ name, value, max, label, variant = 'gold', badge }: BarRowProps) {
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
   return (

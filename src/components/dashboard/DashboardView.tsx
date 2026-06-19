@@ -1,4 +1,9 @@
 'use client';
+/**
+ * Top-level dashboard composition. Lays out every analytics section in order
+ * and owns the cross-section `riskFilter` state so clicking a risk indicator
+ * filters the critical-issues table below it. Also mounts the page modals.
+ */
 import { useState } from 'react';
 import DashboardHeader from './DashboardHeader';
 import KeyMetricsRow from './KeyMetricsRow';
@@ -22,40 +27,40 @@ export default function DashboardView() {
       <DashboardHeader />
 
       <div className={styles.content}>
-        {/* KPIs */}
+        {/* Key metrics (KPIs) */}
         <KeyMetricsRow />
 
-        {/* Estado y prioridad */}
+        {/* Status and priority breakdown */}
         <div className={styles.section}>
           <StatusChartsRow />
         </div>
 
-        {/* Tendencia creadas vs cerradas */}
+        {/* Created vs. closed trend */}
         <div className={styles.section}>
           <TrendAreaChart />
         </div>
 
-        {/* Indicadores de riesgo */}
+        {/* Risk indicators — drive the riskFilter for the table below */}
         <div className={styles.riskRow}>
           <RiskIndicators activeFilter={riskFilter} onFilterChange={setRiskFilter} />
         </div>
 
-        {/* Tabla de incidencias críticas */}
+        {/* Critical issues table (reacts to the selected risk filter) */}
         <div className={styles.section}>
           <CriticalIssuesList riskFilter={riskFilter} />
         </div>
 
-        {/* Mapa de calor + actividad diaria */}
+        {/* Heatmap + daily activity */}
         <div className={styles.section}>
           <HeatmapSection />
         </div>
 
-        {/* Distribución por categoría y etiqueta */}
+        {/* Distribution by category and tag */}
         <div className={styles.section}>
           <DistributionCharts />
         </div>
 
-        {/* Desempeño del equipo */}
+        {/* Team performance */}
         <div className={styles.section}>
           <TeamPerformance />
         </div>

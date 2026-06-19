@@ -1,3 +1,7 @@
+/**
+ * Unit tests for the modal store. Verifies the single-active-modal invariant:
+ * open sets/switches the active modal, close clears it, and close is idempotent.
+ */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useModalStore } from '@/store/useModalStore';
 

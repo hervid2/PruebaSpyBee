@@ -1,3 +1,8 @@
+/**
+ * Builds the HTML string for a marker's Mapbox popup. Mapbox popups accept raw
+ * HTML, so this returns a template string instead of JSX; the incident-detail
+ * link is wired up by the parent via the `data-id` attribute.
+ */
 import type { Incident } from '@/domain/models';
 
 const STATUS_LABELS: Record<Incident['status'], string> = {
@@ -18,6 +23,7 @@ const PRIORITY_COLORS: Record<Incident['priority'], string> = {
   low: '#34c759',
 };
 
+/** Escapes user-supplied text — popups are raw HTML, so prevent injection. */
 function esc(str: string): string {
   return str
     .replace(/&/g, '&amp;')
@@ -26,6 +32,7 @@ function esc(str: string): string {
     .replace(/"/g, '&quot;');
 }
 
+/** Returns the popup markup for an incident (code, title, badges, assignees). */
 export function getPopupHTML(incident: Incident): string {
   const priorityColor = PRIORITY_COLORS[incident.priority];
   const visibleAssignees = incident.assignees.slice(0, 2);

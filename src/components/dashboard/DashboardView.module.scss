@@ -9,7 +9,11 @@
 
 .content {
   flex: 1;
+  min-width: 0;
   overflow-y: auto;
+  // Evita que un hijo ancho (tabla, gráfico) provoque scroll horizontal de toda
+  // la página en móvil; cada bloque ancho gestiona su propio overflow interno.
+  overflow-x: hidden;
 }
 
 .section {

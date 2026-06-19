@@ -40,7 +40,9 @@ export default function LocationPicker({
   const placeMarkerRef = useRef<((coords: Coordinates) => void) | null>(null);
 
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
+    // Sin token, mapbox-gl falla al cargar el estilo (401) y entra en un bucle de
+    // reintentos que satura el WebGL en CI. Igual que useMapbox, no inicializamos el mapa.
+    if (!containerRef.current || mapRef.current || !TOKEN) return;
 
     mapboxgl.accessToken = TOKEN;
 
@@ -126,7 +128,13 @@ export default function LocationPicker({
         className={styles.picker__map}
         role="application"
         aria-label="Mini-mapa de ubicación. Haz clic para fijar la ubicación de la incidencia."
-      />
+      >
+        {!TOKEN && (
+          <p className={styles.picker__fallback}>
+            Mapa no disponible. Ingresa las coordenadas manualmente.
+          </p>
+        )}
+      </div>
 
       <div className={styles.picker__coords}>
         <div className={styles.picker__coord_field}>

@@ -10,6 +10,8 @@ import { getPopupHTML } from '@/components/map/IncidentPopup';
 import CalendarActivity from './CalendarActivity';
 import styles from './HeatmapSection.module.scss';
 
+const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? '';
+
 export default function HeatmapSection() {
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -22,9 +24,11 @@ export default function HeatmapSection() {
 
   // Map initialization — runs once
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
+    // Sin token, mapbox-gl falla al cargar el estilo (401) y reintenta en bucle,
+    // saturando el WebGL por software en CI. Igual que useMapbox, no inicializamos el mapa.
+    if (!containerRef.current || mapRef.current || !TOKEN) return;
 
-    mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? '';
+    mapboxgl.accessToken = TOKEN;
 
     const map = new mapboxgl.Map({
       container: containerRef.current,
@@ -148,7 +152,11 @@ export default function HeatmapSection() {
           className={styles.heatmap__map}
           role="img"
           aria-label="Mapa de incidencias"
-        />
+        >
+          {!TOKEN && (
+            <p className={styles.heatmap__fallback}>Mapa no disponible (sin token de Mapbox).</p>
+          )}
+        </div>
         <aside className={styles.heatmap__calendar} aria-label="Actividad por día">
           <h3 className={styles.heatmap__calendar_title}>Actividad diaria</h3>
           <CalendarActivity

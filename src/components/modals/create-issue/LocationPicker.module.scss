@@ -10,6 +10,9 @@
 
   // ── Mini-map canvas ────────────────────────────────────────────────────
   &__map {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
     height: 200px;
     background: $color-bg-muted;
@@ -18,6 +21,13 @@
     :global(.mapboxgl-ctrl-group) {
       box-shadow: $shadow-sm;
     }
+  }
+
+  &__fallback {
+    padding: 0 $space-md;
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    text-align: center;
   }
 
   // ── Coordinate row ─────────────────────────────────────────────────────

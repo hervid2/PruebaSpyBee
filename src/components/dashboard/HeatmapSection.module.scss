@@ -35,6 +35,9 @@
 }
 
 .heatmap__map {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: 340px;
   border-radius: $radius-md;
   overflow: hidden;
@@ -43,6 +46,12 @@
   @media (max-width: #{$breakpoint-tablet}) {
     height: 260px;
   }
+}
+
+.heatmap__fallback {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  text-align: center;
 }
 
 .heatmap__calendar {

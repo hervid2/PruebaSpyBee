@@ -5,6 +5,8 @@
  * filters the critical-issues table below it. Also mounts the page modals.
  */
 import { useState } from 'react';
+import { motion } from 'motion/react';
+import { useRevealVariants } from '@/hooks/useRevealVariants';
 import DashboardHeader from './DashboardHeader';
 import KeyMetricsRow from './KeyMetricsRow';
 import StatusChartsRow from './StatusChartsRow';
@@ -22,6 +24,12 @@ import styles from './DashboardView.module.scss';
 
 export default function DashboardView() {
   const [riskFilter, setRiskFilter] = useState<RiskFilter>(null);
+  const reveal = useRevealVariants();
+  // Sections below the fold reveal on scroll (`whileInView`) rather than on
+  // mount, so the entrance is actually visible instead of finishing
+  // off-screen before the user scrolls to it. `once: true` keeps it from
+  // replaying every time a section re-enters the viewport.
+  const viewport = { once: true, amount: 0.2 } as const;
 
   return (
     <div className={styles.view}>
@@ -32,39 +40,81 @@ export default function DashboardView() {
         <KeyMetricsRow />
 
         {/* Status and priority breakdown */}
-        <div className={styles.section}>
+        <motion.div
+          className={styles.section}
+          variants={reveal}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+        >
           <StatusChartsRow />
-        </div>
+        </motion.div>
 
         {/* Created vs. closed trend */}
-        <div className={styles.section}>
+        <motion.div
+          className={styles.section}
+          variants={reveal}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+        >
           <TrendAreaChart />
-        </div>
+        </motion.div>
 
         {/* Risk indicators — drive the riskFilter for the table below */}
-        <div className={styles.riskRow}>
+        <motion.div
+          className={styles.riskRow}
+          variants={reveal}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+        >
           <RiskIndicators activeFilter={riskFilter} onFilterChange={setRiskFilter} />
-        </div>
+        </motion.div>
 
         {/* Critical issues table (reacts to the selected risk filter) */}
-        <div className={styles.section}>
+        <motion.div
+          className={styles.section}
+          variants={reveal}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+        >
           <CriticalIssuesList riskFilter={riskFilter} />
-        </div>
+        </motion.div>
 
         {/* Heatmap + daily activity */}
-        <div className={styles.section}>
+        <motion.div
+          className={styles.section}
+          variants={reveal}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+        >
           <HeatmapSection />
-        </div>
+        </motion.div>
 
         {/* Distribution by category and tag */}
-        <div className={styles.section}>
+        <motion.div
+          className={styles.section}
+          variants={reveal}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+        >
           <DistributionCharts />
-        </div>
+        </motion.div>
 
         {/* Team performance */}
-        <div className={styles.section}>
+        <motion.div
+          className={styles.section}
+          variants={reveal}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+        >
           <TeamPerformance />
-        </div>
+        </motion.div>
       </div>
 
       <DashboardFiltersModal />

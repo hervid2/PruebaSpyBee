@@ -8,11 +8,13 @@
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import { AnimatePresence, motion } from 'motion/react';
 import { ChevronLeft, ChevronRight, ArrowUpDown, SlidersHorizontal, X } from 'lucide-react';
 import { formatDistanceToNow, parseISO, isBefore, isAfter, startOfDay, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useIssuesStore } from '@/store/useIssuesStore';
 import { useFiltersStore } from '@/store/useFiltersStore';
+import { useDialogMotion } from '@/hooks/useDialogMotion';
 import type {
   Incident,
   IncidentPriority,
@@ -95,6 +97,7 @@ function TableFiltersModal({
 }) {
   const t = useTranslations('dashboard');
   const [draft, setDraft] = useState<TableFilters>(filters);
+  const { overlay, panel } = useDialogMotion();
 
   const priorities: { value: IncidentPriority; label: string }[] = [
     { value: 'high', label: t('priorityHigh') },
@@ -120,13 +123,17 @@ function TableFiltersModal({
     (draft.due !== 'all' ? 1 : 0);
 
   return (
-    <div
+    <motion.div
       className={styles.filterOverlay}
+      variants={overlay}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
       role="dialog"
       aria-modal
       aria-label={t('criticalFilterModalAriaLabel')}
     >
-      <div className={styles.filterModal}>
+      <motion.div className={styles.filterModal} variants={panel}>
         <div className={styles.filterModal__header}>
           <h3 className={styles.filterModal__title}>{t('criticalFilterModalTitle')}</h3>
           <button
@@ -239,8 +246,8 @@ function TableFiltersModal({
             {activeCount > 0 && ` (${activeCount})`}
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -537,14 +544,16 @@ export default function CriticalIssuesList({ riskFilter }: Props) {
         </button>
       </div>
 
-      {showFilterModal && (
-        <TableFiltersModal
-          filters={tableFilters}
-          creators={creators}
-          onChange={handleTableFiltersChange}
-          onClose={() => setShowFilterModal(false)}
-        />
-      )}
+      <AnimatePresence>
+        {showFilterModal && (
+          <TableFiltersModal
+            filters={tableFilters}
+            creators={creators}
+            onChange={handleTableFiltersChange}
+            onClose={() => setShowFilterModal(false)}
+          />
+        )}
+      </AnimatePresence>
     </section>
   );
 }

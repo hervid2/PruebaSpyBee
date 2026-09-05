@@ -6,8 +6,10 @@
  */
 import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { AnimatePresence, motion } from 'motion/react';
 import { X } from 'lucide-react';
 import { useModalStore } from '@/store/useModalStore';
+import { useDialogMotion } from '@/hooks/useDialogMotion';
 import IssueForm from './IssueForm';
 import styles from './CreateIssueModal.module.scss';
 
@@ -16,6 +18,7 @@ export default function CreateIssueModal() {
   const activeModal = useModalStore((s) => s.activeModal);
   const close = useModalStore((s) => s.close);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const { overlay, panel } = useDialogMotion();
   // Stays mounted while the category-manager sub-modal is active, since it renders
   // inside IssueForm and would otherwise unmount along with this parent.
   const isOpen = activeModal === 'create-issue' || activeModal === 'category-manager';
@@ -71,35 +74,41 @@ export default function CreateIssueModal() {
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
   return (
-    <div
-      className={styles.overlay}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="create-issue-title"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) close();
-      }}
-    >
-      <div className={styles.modal} ref={dialogRef}>
-        <div className={styles.header}>
-          <h2 id="create-issue-title" className={styles.header__title}>
-            {t('modal.title')}
-          </h2>
-          <button
-            className={styles.header__close}
-            type="button"
-            onClick={close}
-            aria-label={t('modal.close')}
-          >
-            <X size={18} />
-          </button>
-        </div>
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          className={styles.overlay}
+          variants={overlay}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="create-issue-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) close();
+          }}
+        >
+          <motion.div className={styles.modal} variants={panel} ref={dialogRef}>
+            <div className={styles.header}>
+              <h2 id="create-issue-title" className={styles.header__title}>
+                {t('modal.title')}
+              </h2>
+              <button
+                className={styles.header__close}
+                type="button"
+                onClick={close}
+                aria-label={t('modal.close')}
+              >
+                <X size={18} />
+              </button>
+            </div>
 
-        <IssueForm onClose={close} />
-      </div>
-    </div>
+            <IssueForm onClose={close} />
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

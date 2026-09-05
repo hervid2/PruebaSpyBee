@@ -5,6 +5,7 @@
  * choice to {@link DashboardView}, which narrows the critical-issues table.
  */
 import { useTranslations } from 'next-intl';
+import { motion, useReducedMotion } from 'motion/react';
 import { AlertTriangle, Clock, Flame, CalendarClock } from 'lucide-react';
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import styles from './RiskIndicators.module.scss';
@@ -52,6 +53,7 @@ interface Props {
 export default function RiskIndicators({ activeFilter, onFilterChange }: Props) {
   const t = useTranslations('dashboard');
   const { risk } = useDashboardMetrics();
+  const shouldReduceMotion = useReducedMotion();
 
   return (
     <section className={styles.section} aria-label={t('riskTitle')}>
@@ -61,17 +63,20 @@ export default function RiskIndicators({ activeFilter, onFilterChange }: Props) 
           const count = risk[key];
           const isActive = activeFilter === key;
           return (
-            <button
+            <motion.button
               key={key}
               className={`${styles.chip} ${isActive ? styles['chip--active'] : ''}`}
               style={{ '--chip-color': color } as React.CSSProperties}
               onClick={() => onFilterChange(isActive ? null : key)}
               aria-pressed={isActive}
+              whileHover={shouldReduceMotion ? undefined : { scale: 1.03 }}
+              whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
+              transition={{ duration: 0.15 }}
             >
               <Icon size={14} className={styles.chip__icon} aria-hidden />
               <span className={styles.chip__label}>{t(labelKey)}</span>
               <span className={styles.chip__count}>{count}</span>
-            </button>
+            </motion.button>
           );
         })}
       </div>

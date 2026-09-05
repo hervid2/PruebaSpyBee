@@ -6,6 +6,7 @@
  */
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { motion, useReducedMotion } from 'motion/react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
@@ -36,6 +37,7 @@ export default function CalendarActivity({
   const t = useTranslations('dashboard');
   const [current, setCurrent] = useState(() => new Date()); // visible month
   const [internalDate, setInternalDate] = useState<string | null>(null);
+  const shouldReduceMotion = useReducedMotion();
 
   const DAY_NAMES = [
     t('calendarDaySun'),
@@ -149,7 +151,7 @@ export default function CalendarActivity({
           const isSelected = selectedDate === key;
           const isClickable = count > 0;
           return (
-            <div
+            <motion.div
               key={key}
               className={[
                 styles.calendar__day,
@@ -164,6 +166,9 @@ export default function CalendarActivity({
               aria-label={`${format(day, "d 'de' MMMM", { locale: es })}: ${t('calendarIncidentsCount', { count })}${isSelected ? t('calendarSelectedSuffix') : ''}`}
               aria-selected={isSelected}
               onClick={() => handleDayClick(key, count)}
+              whileHover={isClickable && !shouldReduceMotion ? { scale: 1.03 } : undefined}
+              whileTap={isClickable && !shouldReduceMotion ? { scale: 0.97 } : undefined}
+              transition={{ duration: 0.15 }}
             >
               <span className={styles.calendar__day_num}>{day.getDate()}</span>
               {count > 0 && (
@@ -171,7 +176,7 @@ export default function CalendarActivity({
                   {count}
                 </span>
               )}
-            </div>
+            </motion.div>
           );
         })}
       </div>

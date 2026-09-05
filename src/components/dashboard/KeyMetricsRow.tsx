@@ -5,9 +5,16 @@
  * presents them with accent colors and trend arrows — display-only.
  */
 import { useTranslations } from 'next-intl';
+import { motion, useReducedMotion, type Variants } from 'motion/react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
+import { useRevealVariants } from '@/hooks/useRevealVariants';
 import styles from './KeyMetricsRow.module.scss';
+
+const CONTAINER: Variants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.06 } },
+};
 
 /** Single KPI tile: label, value and optional trend-annotated subtitle. */
 function MetricCard({
@@ -16,15 +23,21 @@ function MetricCard({
   sub,
   accent,
   trend,
+  variants,
 }: {
   label: string;
   value: string | number;
   sub?: string;
   accent: string;
   trend?: 'up' | 'down' | 'neutral';
+  variants: Variants;
 }) {
   return (
-    <article className={styles.card} style={{ '--accent': accent } as React.CSSProperties}>
+    <motion.article
+      className={styles.card}
+      style={{ '--accent': accent } as React.CSSProperties}
+      variants={variants}
+    >
       <div className={styles.card__accent} aria-hidden />
       <div className={styles.card__body}>
         <p className={styles.card__label}>{label}</p>
@@ -38,29 +51,40 @@ function MetricCard({
           </p>
         )}
       </div>
-    </article>
+    </motion.article>
   );
 }
 
 export default function KeyMetricsRow() {
   const t = useTranslations('dashboard');
   const m = useDashboardMetrics();
+  const shouldReduceMotion = useReducedMotion();
+  const itemVariants = useRevealVariants();
 
   const resolutionLabel = m.avgResolutionDays === null ? '—' : `${m.avgResolutionDays}d`;
 
   return (
-    <section className={styles.row} aria-label={t('metricsSectionAriaLabel')}>
+    <motion.section
+      className={styles.row}
+      aria-label={t('metricsSectionAriaLabel')}
+      variants={shouldReduceMotion ? undefined : CONTAINER}
+      initial="hidden"
+      animate="visible"
+    >
       <MetricCard
+        variants={itemVariants}
         label={t('metricsOpen')}
         value={m.openCount}
         accent="var(--color-status-open, #34C759)"
       />
       <MetricCard
+        variants={itemVariants}
         label={t('metricsCreatedInPeriod')}
         value={m.createdInPeriod}
         accent="var(--color-info-blue, #3B82F6)"
       />
       <MetricCard
+        variants={itemVariants}
         label={t('metricsClosedInPeriod')}
         value={m.closedInPeriod}
         accent={
@@ -70,6 +94,7 @@ export default function KeyMetricsRow() {
         }
       />
       <MetricCard
+        variants={itemVariants}
         label={t('metricsClosureRate')}
         value={`${m.closureRate}%`}
         sub={m.closureRate >= 50 ? t('metricsGoodPace') : t('metricsNeedsImprovement')}
@@ -77,18 +102,20 @@ export default function KeyMetricsRow() {
         accent="var(--color-accent-gold, #F2B705)"
       />
       <MetricCard
+        variants={itemVariants}
         label={t('metricsAvgResolutionTime')}
         value={resolutionLabel}
         sub={m.avgResolutionDays !== null ? t('metricsAvgResolutionSub') : t('metricsNoDataSub')}
         accent="var(--color-info-blue, #3B82F6)"
       />
       <MetricCard
+        variants={itemVariants}
         label={t('metricsOverdueActive')}
         value={m.overdueActiveCount}
         sub={m.overdueActiveCount > 0 ? t('metricsNeedsAttention') : t('metricsUpToDate')}
         trend={m.overdueActiveCount > 0 ? 'down' : 'neutral'}
         accent="var(--color-status-closed, #E5484D)"
       />
-    </section>
+    </motion.section>
   );
 }

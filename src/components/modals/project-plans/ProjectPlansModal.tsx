@@ -8,6 +8,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { AnimatePresence, motion } from 'motion/react';
 import {
   X,
   Upload,
@@ -25,6 +26,7 @@ import {
   uploadProjectPlan,
   deleteProjectPlan,
 } from '@/services/project-plans.service';
+import { useDialogMotion } from '@/hooks/useDialogMotion';
 import type { Project, ProjectPlan } from '@/domain/models';
 import styles from './ProjectPlansModal.module.scss';
 
@@ -61,6 +63,7 @@ export default function ProjectPlansModal() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { overlay, panel } = useDialogMotion();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -91,8 +94,6 @@ export default function ProjectPlansModal() {
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [isOpen, close]);
-
-  if (!isOpen) return null;
 
   const handleClose = () => {
     setUploadError('');
@@ -129,116 +130,128 @@ export default function ProjectPlansModal() {
   };
 
   return (
-    <div
-      className={styles.overlay}
-      role="dialog"
-      aria-modal="true"
-      aria-label={t('ariaLabel')}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) handleClose();
-      }}
-    >
-      <div className={styles.modal}>
-        <div className={styles.header}>
-          <h3>{t('title')}</h3>
-          <button
-            type="button"
-            className={styles.close}
-            onClick={handleClose}
-            aria-label={t('close')}
-          >
-            <X size={16} />
-          </button>
-        </div>
-
-        <div className={styles.body}>
-          <p className={styles.intro}>{t('intro')}</p>
-
-          <label className={styles['project-picker']}>
-            <span>{t('projectLabel')}</span>
-            <select
-              value={selectedProjectId}
-              onChange={(e) => setSelectedProjectId(e.target.value)}
-              disabled={loadingProjects || projects.length === 0}
-              aria-label={t('projectAriaLabel')}
-            >
-              {projects.length === 0 && <option value="">{t('noProjects')}</option>}
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          {isAdmin && (
-            <div className={styles['upload-row']}>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
-                onChange={handleFileSelected}
-                disabled={uploading || !selectedProjectId}
-                className={styles['upload-row__input']}
-                id="project-plan-upload"
-              />
-              <label htmlFor="project-plan-upload" className={styles['upload-row__button']}>
-                {uploading ? <Loader2 size={14} className={styles.spin} /> : <Upload size={14} />}
-                {uploading ? t('uploading') : t('attachPlan')}
-              </label>
-              <span className={styles['upload-row__hint']}>{t('acceptedFormats')}</span>
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          className={styles.overlay}
+          variants={overlay}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t('ariaLabel')}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) handleClose();
+          }}
+        >
+          <motion.div className={styles.modal} variants={panel}>
+            <div className={styles.header}>
+              <h3>{t('title')}</h3>
+              <button
+                type="button"
+                className={styles.close}
+                onClick={handleClose}
+                aria-label={t('close')}
+              >
+                <X size={16} />
+              </button>
             </div>
-          )}
 
-          {uploadError && (
-            <p className={styles.error} role="alert">
-              {uploadError}
-            </p>
-          )}
+            <div className={styles.body}>
+              <p className={styles.intro}>{t('intro')}</p>
 
-          <div className={styles.list} role="list" aria-label={t('listAriaLabel')}>
-            {loadingPlans ? (
-              <p className={styles.empty}>{t('loading')}</p>
-            ) : plans.length === 0 ? (
-              <p className={styles.empty}>{t('empty')}</p>
-            ) : (
-              plans.map((plan) => (
-                <div key={plan.id} className={styles.item} role="listitem">
-                  <span className={styles.item__icon} aria-hidden="true">
-                    {plan.type === 'image' ? <ImageIcon size={16} /> : <FileText size={16} />}
-                  </span>
-                  <div className={styles.item__info}>
-                    <span className={styles.item__name} title={plan.name}>
-                      {plan.name}
-                    </span>
-                    <span className={styles.item__meta}>{formatFileSize(plan.size)}</span>
-                  </div>
-                  <a
-                    className={styles.item__open}
-                    href={plan.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={t('openAriaLabel', { name: plan.name })}
-                  >
-                    <ExternalLink size={14} />
-                  </a>
-                  {isAdmin && (
-                    <button
-                      type="button"
-                      className={styles.item__delete}
-                      onClick={() => handleDelete(plan.id)}
-                      disabled={deletingId === plan.id}
-                      aria-label={t('deleteAriaLabel', { name: plan.name })}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  )}
+              <label className={styles['project-picker']}>
+                <span>{t('projectLabel')}</span>
+                <select
+                  value={selectedProjectId}
+                  onChange={(e) => setSelectedProjectId(e.target.value)}
+                  disabled={loadingProjects || projects.length === 0}
+                  aria-label={t('projectAriaLabel')}
+                >
+                  {projects.length === 0 && <option value="">{t('noProjects')}</option>}
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              {isAdmin && (
+                <div className={styles['upload-row']}>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+                    onChange={handleFileSelected}
+                    disabled={uploading || !selectedProjectId}
+                    className={styles['upload-row__input']}
+                    id="project-plan-upload"
+                  />
+                  <label htmlFor="project-plan-upload" className={styles['upload-row__button']}>
+                    {uploading ? (
+                      <Loader2 size={14} className={styles.spin} />
+                    ) : (
+                      <Upload size={14} />
+                    )}
+                    {uploading ? t('uploading') : t('attachPlan')}
+                  </label>
+                  <span className={styles['upload-row__hint']}>{t('acceptedFormats')}</span>
                 </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+              )}
+
+              {uploadError && (
+                <p className={styles.error} role="alert">
+                  {uploadError}
+                </p>
+              )}
+
+              <div className={styles.list} role="list" aria-label={t('listAriaLabel')}>
+                {loadingPlans ? (
+                  <p className={styles.empty}>{t('loading')}</p>
+                ) : plans.length === 0 ? (
+                  <p className={styles.empty}>{t('empty')}</p>
+                ) : (
+                  plans.map((plan) => (
+                    <div key={plan.id} className={styles.item} role="listitem">
+                      <span className={styles.item__icon} aria-hidden="true">
+                        {plan.type === 'image' ? <ImageIcon size={16} /> : <FileText size={16} />}
+                      </span>
+                      <div className={styles.item__info}>
+                        <span className={styles.item__name} title={plan.name}>
+                          {plan.name}
+                        </span>
+                        <span className={styles.item__meta}>{formatFileSize(plan.size)}</span>
+                      </div>
+                      <a
+                        className={styles.item__open}
+                        href={plan.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={t('openAriaLabel', { name: plan.name })}
+                      >
+                        <ExternalLink size={14} />
+                      </a>
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          className={styles.item__delete}
+                          onClick={() => handleDelete(plan.id)}
+                          disabled={deletingId === plan.id}
+                          aria-label={t('deleteAriaLabel', { name: plan.name })}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

@@ -10,16 +10,6 @@
   align-items: center;
   justify-content: center;
   padding: $space-md;
-  animation: fadeIn $transition-fast;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
 }
 
 .modal {
@@ -31,7 +21,6 @@
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  animation: slideUp $transition-normal;
 
   // The overlay keeps its padding at every breakpoint, so the modal never
   // actually reaches the screen edges — square corners here just looked like
@@ -40,17 +29,6 @@
     max-width: 100%;
     max-height: 100vh;
     margin: 0;
-  }
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
   }
 }
 

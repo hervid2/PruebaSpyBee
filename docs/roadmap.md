@@ -1,6 +1,6 @@
 # Iteration Roadmap — FlyWorkFlow
 
-> Planning document, versioned alongside the code. Last updated: 2026-08-20.
+> Planning document, versioned alongside the code. Last updated: 2026-09-05.
 > Each iteration = one git branch, one scoped work cycle. When closing an iteration, use `scripts/commit-push.ps1` with the suggested message. This document does **not duplicate** content from `requirements.md` or `best-practices.md` — it only references the exact section that applies to each task.
 >
 > Base branch for every iteration: `develop`. PRs target `develop`; `main` only receives merges from an already-validated `develop` (a pattern the repo already uses).
@@ -130,7 +130,7 @@ Parallelizable with Phase 3 (there's no real dependency between frontend fixes a
 
 ---
 
-## Phase 8 — Extended product
+## Phase 8 — Extended product _(complete)_
 
 | #    | Branch                            | Goal                                                                                                                                              | Suggested commit                                                       |
 | ---- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |

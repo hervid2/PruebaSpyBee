@@ -355,6 +355,14 @@ describe('CreateIssueModal — gestor de categorías', () => {
     expect(within(categoryList).getByText('Impermeabilización')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Volver al formulario' }));
+    // The category manager exits with a Motion transition, so its dialog
+    // (also matched by /categoría/i via its own aria-label) lingers in the
+    // DOM briefly — wait for it to fully unmount before querying the form.
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('button', { name: 'Volver al formulario' }),
+      ).not.toBeInTheDocument();
+    });
 
     const select = screen.getByLabelText(/categoría/i) as HTMLSelectElement;
     const option = Array.from(select.options).find((o) => o.text === 'Impermeabilización');
@@ -370,6 +378,14 @@ describe('CreateIssueModal — gestor de categorías', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Agregar' }));
     fireEvent.click(screen.getByRole('button', { name: 'Volver al formulario' }));
+    // The category manager exits with a Motion transition, so its dialog
+    // (also matched by /categoría/i via its own aria-label) lingers in the
+    // DOM briefly — wait for it to fully unmount before querying the form.
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('button', { name: 'Volver al formulario' }),
+      ).not.toBeInTheDocument();
+    });
 
     fireEvent.change(screen.getByLabelText(/título/i), {
       target: { value: 'Filtración en cubierta' },

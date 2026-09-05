@@ -8,6 +8,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { AnimatePresence, motion } from 'motion/react';
 import { X, Check, Copy, Trash2 } from 'lucide-react';
 import { useModalStore } from '@/store/useModalStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -19,6 +20,7 @@ import {
   type InvitationRole,
 } from '@/services/invitations.service';
 import { ApiError } from '@/lib/api-client';
+import { useDialogMotion } from '@/hooks/useDialogMotion';
 import AccessRestricted from '@/components/ui/AccessRestricted';
 import styles from './InviteCollaboratorsModal.module.scss';
 
@@ -43,6 +45,7 @@ export default function InviteCollaboratorsModal() {
   const [revokingId, setRevokingId] = useState<string | null>(null);
 
   const emailInputRef = useRef<HTMLInputElement>(null);
+  const { overlay, panel } = useDialogMotion();
 
   useEffect(() => {
     if (!isOpen || !isAdmin) return;
@@ -65,8 +68,6 @@ export default function InviteCollaboratorsModal() {
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [isOpen, close]);
-
-  if (!isOpen) return null;
 
   const handleClose = () => {
     setJustCreated(null);
@@ -124,117 +125,125 @@ export default function InviteCollaboratorsModal() {
   };
 
   return (
-    <div
-      className={styles.overlay}
-      role="dialog"
-      aria-modal="true"
-      aria-label={t('ariaLabel')}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) handleClose();
-      }}
-    >
-      <div className={styles.modal}>
-        <div className={styles.header}>
-          <h3>{t('title')}</h3>
-          <button
-            type="button"
-            className={styles.close}
-            onClick={handleClose}
-            aria-label={t('close')}
-          >
-            <X size={16} />
-          </button>
-        </div>
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          className={styles.overlay}
+          variants={overlay}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t('ariaLabel')}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) handleClose();
+          }}
+        >
+          <motion.div className={styles.modal} variants={panel}>
+            <div className={styles.header}>
+              <h3>{t('title')}</h3>
+              <button
+                type="button"
+                className={styles.close}
+                onClick={handleClose}
+                aria-label={t('close')}
+              >
+                <X size={16} />
+              </button>
+            </div>
 
-        <div className={styles.body}>
-          {!isAdmin ? (
-            <AccessRestricted title={t('forbiddenTitle')} message={t('forbiddenMessage')} />
-          ) : (
-            <>
-              <p className={styles.intro}>{t('intro')}</p>
+            <div className={styles.body}>
+              {!isAdmin ? (
+                <AccessRestricted title={t('forbiddenTitle')} message={t('forbiddenMessage')} />
+              ) : (
+                <>
+                  <p className={styles.intro}>{t('intro')}</p>
 
-              <form className={styles['create-row']} onSubmit={handleCreate}>
-                <input
-                  ref={emailInputRef}
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder={t('emailPlaceholder')}
-                  aria-label={t('emailAriaLabel')}
-                  required
-                />
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as InvitationRole)}
-                  aria-label={t('roleAriaLabel')}
-                >
-                  <option value="member">{t('roleMember')}</option>
-                  <option value="admin">{t('roleAdmin')}</option>
-                </select>
-                <button type="submit" disabled={creating || !email.trim()}>
-                  {creating ? t('generating') : t('generate')}
-                </button>
-              </form>
-
-              {createError && (
-                <p className={styles.error} role="alert">
-                  {createError}
-                </p>
-              )}
-
-              {justCreated?.inviteUrl && (
-                <div className={styles['link-panel']} role="status">
-                  <p className={styles['link-panel__label']}>{t('linkReady')}</p>
-                  <div className={styles['link-panel__row']}>
-                    <input type="text" readOnly value={justCreated.inviteUrl} />
-                    <button type="button" onClick={handleCopy} aria-label={t('copyLink')}>
-                      {copied ? <Check size={14} /> : <Copy size={14} />}
-                      {copied ? t('copied') : t('copy')}
+                  <form className={styles['create-row']} onSubmit={handleCreate}>
+                    <input
+                      ref={emailInputRef}
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder={t('emailPlaceholder')}
+                      aria-label={t('emailAriaLabel')}
+                      required
+                    />
+                    <select
+                      value={role}
+                      onChange={(e) => setRole(e.target.value as InvitationRole)}
+                      aria-label={t('roleAriaLabel')}
+                    >
+                      <option value="member">{t('roleMember')}</option>
+                      <option value="admin">{t('roleAdmin')}</option>
+                    </select>
+                    <button type="submit" disabled={creating || !email.trim()}>
+                      {creating ? t('generating') : t('generate')}
                     </button>
-                  </div>
-                </div>
-              )}
+                  </form>
 
-              <div className={styles.list} role="list" aria-label={t('listAriaLabel')}>
-                {loadingList ? (
-                  <p className={styles.empty}>{t('loading')}</p>
-                ) : invitations.length === 0 ? (
-                  <p className={styles.empty}>{t('empty')}</p>
-                ) : (
-                  invitations.map((inv) => (
-                    <div key={inv.id} className={styles.item} role="listitem">
-                      <div className={styles.item__info}>
-                        <span className={styles.item__email}>{inv.email}</span>
-                        <span className={styles.item__meta}>
-                          {inv.role === 'admin' ? t('roleAdmin') : t('roleMember')} ·{' '}
-                          {inv.status === 'accepted'
-                            ? t('statusAccepted')
-                            : inv.status === 'revoked'
-                              ? t('statusRevoked')
-                              : inv.expired
-                                ? t('statusExpired')
-                                : t('statusPending')}
-                        </span>
-                      </div>
-                      {inv.status === 'pending' && !inv.expired && (
-                        <button
-                          type="button"
-                          className={styles.item__revoke}
-                          onClick={() => handleRevoke(inv.id)}
-                          disabled={revokingId === inv.id}
-                          aria-label={t('revoke', { email: inv.email })}
-                        >
-                          <Trash2 size={14} />
+                  {createError && (
+                    <p className={styles.error} role="alert">
+                      {createError}
+                    </p>
+                  )}
+
+                  {justCreated?.inviteUrl && (
+                    <div className={styles['link-panel']} role="status">
+                      <p className={styles['link-panel__label']}>{t('linkReady')}</p>
+                      <div className={styles['link-panel__row']}>
+                        <input type="text" readOnly value={justCreated.inviteUrl} />
+                        <button type="button" onClick={handleCopy} aria-label={t('copyLink')}>
+                          {copied ? <Check size={14} /> : <Copy size={14} />}
+                          {copied ? t('copied') : t('copy')}
                         </button>
-                      )}
+                      </div>
                     </div>
-                  ))
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+                  )}
+
+                  <div className={styles.list} role="list" aria-label={t('listAriaLabel')}>
+                    {loadingList ? (
+                      <p className={styles.empty}>{t('loading')}</p>
+                    ) : invitations.length === 0 ? (
+                      <p className={styles.empty}>{t('empty')}</p>
+                    ) : (
+                      invitations.map((inv) => (
+                        <div key={inv.id} className={styles.item} role="listitem">
+                          <div className={styles.item__info}>
+                            <span className={styles.item__email}>{inv.email}</span>
+                            <span className={styles.item__meta}>
+                              {inv.role === 'admin' ? t('roleAdmin') : t('roleMember')} ·{' '}
+                              {inv.status === 'accepted'
+                                ? t('statusAccepted')
+                                : inv.status === 'revoked'
+                                  ? t('statusRevoked')
+                                  : inv.expired
+                                    ? t('statusExpired')
+                                    : t('statusPending')}
+                            </span>
+                          </div>
+                          {inv.status === 'pending' && !inv.expired && (
+                            <button
+                              type="button"
+                              className={styles.item__revoke}
+                              onClick={() => handleRevoke(inv.id)}
+                              disabled={revokingId === inv.id}
+                              aria-label={t('revoke', { email: inv.email })}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

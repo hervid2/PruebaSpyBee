@@ -6,6 +6,7 @@
  * intercepting their clicks at the document level to open the modal.
  */
 import { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { X, MapPin, Calendar, Clock, FileText } from 'lucide-react';
 import { format, parseISO, formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -18,6 +19,7 @@ import {
   updateIncidentApproval,
 } from '@/services/incident-mutations.service';
 import { ApiError } from '@/lib/api-client';
+import { useDialogMotion } from '@/hooks/useDialogMotion';
 import type { UserRef, IncidentStatus } from '@/domain/models/incident.model';
 import styles from './IncidentDetailModal.module.scss';
 
@@ -65,6 +67,7 @@ export default function IncidentDetailModal() {
   const [approvalError, setApprovalError] = useState('');
   const [rejectingReason, setRejectingReason] = useState('');
   const [showRejectForm, setShowRejectForm] = useState(false);
+  const { overlay, panel } = useDialogMotion();
 
   // Intercept "Ver detalles" clicks from Mapbox popups (DOM-rendered, not React)
   useEffect(() => {
@@ -99,7 +102,11 @@ export default function IncidentDetailModal() {
   }, [selectedIncidentId]);
 
   const incident = incidents.find((i) => i.id === selectedIncidentId);
-  if (!incident) return null;
+  // Keeps AnimatePresence itself mounted (same element at the same tree
+  // position every render) so it can still play the exit transition on the
+  // motion.div below when incident disappears — an unconditional `return
+  // null` here would unmount AnimatePresence too and skip the exit animation.
+  if (!incident) return <AnimatePresence>{null}</AnimatePresence>;
 
   // Mirrors the backend's own permission check (canEdit/remove in
   // incidents.service.ts) for UI gating only — the backend is still the
@@ -185,270 +192,216 @@ export default function IncidentDetailModal() {
   };
 
   return (
-    <div
-      className={styles.overlay}
-      role="dialog"
-      aria-modal
-      aria-labelledby="incident-detail-title"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) closeDetail();
-      }}
-    >
-      <div className={styles.modal}>
-        {/* ── Header ── */}
-        <div className={styles.modal__header}>
-          <div className={styles.modal__meta}>
-            <span className={styles.modal__code}>#{incident.sequenceId}</span>
-            <span className={`${styles.badge} ${styles[`badge--priority-${incident.priority}`]}`}>
-              {PRIORITY_LABELS[incident.priority]}
-            </span>
-            <span className={`${styles.badge} ${styles[`badge--status-${incident.status}`]}`}>
-              {STATUS_LABELS[incident.status]}
-            </span>
-            <span className={`${styles.badge} ${styles[`badge--approval-${incident.approval}`]}`}>
-              {APPROVAL_LABELS[incident.approval]}
-            </span>
-            <span className={`${styles.badge} ${styles['badge--type']}`}>{incident.type.name}</span>
-          </div>
-          <button
-            className={styles.modal__close}
-            onClick={closeDetail}
-            aria-label="Cerrar detalle de incidencia"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* ── Title ── */}
-        <h2 id="incident-detail-title" className={styles.modal__title}>
-          {incident.title}
-        </h2>
-
-        {/* ── Description ── */}
-        {incident.description && (
-          <section className={styles.section}>
-            <h3 className={styles.section__label}>Descripción</h3>
-            <p className={styles.section__text}>{incident.description}</p>
-          </section>
-        )}
-
-        {/* ── People ── */}
-        <section className={styles.section}>
-          <h3 className={styles.section__label}>Personas</h3>
-          <div className={styles.peopleGrid}>
-            <div>
-              <span className={styles.peopleGrid__role}>Creado por</span>
-              <UserChip user={incident.owner} />
+    <AnimatePresence>
+      <motion.div
+        className={styles.overlay}
+        variants={overlay}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        role="dialog"
+        aria-modal
+        aria-labelledby="incident-detail-title"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) closeDetail();
+        }}
+      >
+        <motion.div className={styles.modal} variants={panel}>
+          {/* ── Header ── */}
+          <div className={styles.modal__header}>
+            <div className={styles.modal__meta}>
+              <span className={styles.modal__code}>#{incident.sequenceId}</span>
+              <span className={`${styles.badge} ${styles[`badge--priority-${incident.priority}`]}`}>
+                {PRIORITY_LABELS[incident.priority]}
+              </span>
+              <span className={`${styles.badge} ${styles[`badge--status-${incident.status}`]}`}>
+                {STATUS_LABELS[incident.status]}
+              </span>
+              <span className={`${styles.badge} ${styles[`badge--approval-${incident.approval}`]}`}>
+                {APPROVAL_LABELS[incident.approval]}
+              </span>
+              <span className={`${styles.badge} ${styles['badge--type']}`}>
+                {incident.type.name}
+              </span>
             </div>
-            {incident.assignees.length > 0 && (
-              <div>
-                <span className={styles.peopleGrid__role}>Asignados</span>
-                <div className={styles.userList}>
-                  {incident.assignees.map((a) => (
-                    <UserChip key={a.id} user={a} />
-                  ))}
-                </div>
-              </div>
-            )}
-            {incident.observers.length > 0 && (
-              <div>
-                <span className={styles.peopleGrid__role}>Observadores</span>
-                <div className={styles.userList}>
-                  {incident.observers.map((o) => (
-                    <UserChip key={o.id} user={o} />
-                  ))}
-                </div>
-              </div>
-            )}
+            <button
+              className={styles.modal__close}
+              onClick={closeDetail}
+              aria-label="Cerrar detalle de incidencia"
+            >
+              <X size={18} />
+            </button>
           </div>
-        </section>
 
-        {/* ── Tags ── */}
-        {incident.tags.length > 0 && (
+          {/* ── Title ── */}
+          <h2 id="incident-detail-title" className={styles.modal__title}>
+            {incident.title}
+          </h2>
+
+          {/* ── Description ── */}
+          {incident.description && (
+            <section className={styles.section}>
+              <h3 className={styles.section__label}>Descripción</h3>
+              <p className={styles.section__text}>{incident.description}</p>
+            </section>
+          )}
+
+          {/* ── People ── */}
           <section className={styles.section}>
-            <h3 className={styles.section__label}>Etiquetas</h3>
-            <div className={styles.tags}>
-              {incident.tags.map((t) => (
-                <span
-                  key={t.id}
-                  className={styles.tag}
-                  style={{
-                    background: `${t.color}22`,
-                    color: t.color,
-                    borderColor: `${t.color}55`,
-                  }}
-                >
-                  {t.name}
-                </span>
-              ))}
+            <h3 className={styles.section__label}>Personas</h3>
+            <div className={styles.peopleGrid}>
+              <div>
+                <span className={styles.peopleGrid__role}>Creado por</span>
+                <UserChip user={incident.owner} />
+              </div>
+              {incident.assignees.length > 0 && (
+                <div>
+                  <span className={styles.peopleGrid__role}>Asignados</span>
+                  <div className={styles.userList}>
+                    {incident.assignees.map((a) => (
+                      <UserChip key={a.id} user={a} />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {incident.observers.length > 0 && (
+                <div>
+                  <span className={styles.peopleGrid__role}>Observadores</span>
+                  <div className={styles.userList}>
+                    {incident.observers.map((o) => (
+                      <UserChip key={o.id} user={o} />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </section>
-        )}
 
-        {/* ── Metadata ── */}
-        <section className={styles.section}>
-          <h3 className={styles.section__label}>Detalles</h3>
-          <div className={styles.metaGrid}>
-            {incident.dueDate && (
-              <div className={styles.metaItem}>
-                <Calendar size={14} className={styles.metaItem__icon} aria-hidden />
-                <div>
-                  <span className={styles.metaItem__label}>Vencimiento</span>
-                  <span className={styles.metaItem__value}>
-                    {format(parseISO(incident.dueDate), "d 'de' MMMM yyyy", { locale: es })}
-                  </span>
-                </div>
-              </div>
-            )}
-            {incident.locationDescription && (
-              <div className={styles.metaItem}>
-                <MapPin size={14} className={styles.metaItem__icon} aria-hidden />
-                <div>
-                  <span className={styles.metaItem__label}>Ubicación</span>
-                  <span className={styles.metaItem__value}>{incident.locationDescription}</span>
-                </div>
-              </div>
-            )}
-            {incident.media.length > 0 && (
-              <div className={styles.metaItem}>
-                <FileText size={14} className={styles.metaItem__icon} aria-hidden />
-                <div>
-                  <span className={styles.metaItem__label}>Archivos adjuntos</span>
-                  <span className={styles.metaItem__value}>
-                    {incident.media.length} archivo{incident.media.length !== 1 ? 's' : ''}
-                  </span>
-                </div>
-              </div>
-            )}
-            <div className={styles.metaItem}>
-              <Clock size={14} className={styles.metaItem__icon} aria-hidden />
-              <div>
-                <span className={styles.metaItem__label}>Creada</span>
-                <span className={styles.metaItem__value}>
-                  {formatDistanceToNow(parseISO(incident.createdAt), {
-                    locale: es,
-                    addSuffix: true,
-                  })}
-                </span>
-              </div>
-            </div>
-            <div className={styles.metaItem}>
-              <Clock size={14} className={styles.metaItem__icon} aria-hidden />
-              <div>
-                <span className={styles.metaItem__label}>Última actualización</span>
-                <span className={styles.metaItem__value}>
-                  {formatDistanceToNow(parseISO(incident.updatedAt), {
-                    locale: es,
-                    addSuffix: true,
-                  })}
-                </span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Aprobación (admin+, solo mientras está pendiente) ── */}
-        {canDecideApproval && (
-          <section className={styles.section}>
-            <h3 className={styles.section__label}>Aprobación</h3>
-            <div className={styles.actions}>
-              <button
-                type="button"
-                className={styles.approveBtn}
-                onClick={handleApprove}
-                disabled={approvalPending}
-              >
-                {approvalPending ? 'Procesando…' : 'Aprobar'}
-              </button>
-
-              {showRejectForm ? (
-                <div className={styles.rejectForm}>
-                  <input
-                    type="text"
-                    className={styles.rejectForm__input}
-                    placeholder="Motivo del rechazo (opcional)"
-                    value={rejectingReason}
-                    onChange={(e) => setRejectingReason(e.target.value)}
-                    disabled={approvalPending}
-                    aria-label="Motivo del rechazo"
-                  />
-                  <button
-                    type="button"
-                    className={styles.rejectForm__confirm}
-                    onClick={handleReject}
-                    disabled={approvalPending}
-                  >
-                    {approvalPending ? 'Procesando…' : 'Confirmar rechazo'}
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.rejectForm__cancel}
-                    onClick={() => {
-                      setShowRejectForm(false);
-                      setRejectingReason('');
+          {/* ── Tags ── */}
+          {incident.tags.length > 0 && (
+            <section className={styles.section}>
+              <h3 className={styles.section__label}>Etiquetas</h3>
+              <div className={styles.tags}>
+                {incident.tags.map((t) => (
+                  <span
+                    key={t.id}
+                    className={styles.tag}
+                    style={{
+                      background: `${t.color}22`,
+                      color: t.color,
+                      borderColor: `${t.color}55`,
                     }}
-                    disabled={approvalPending}
                   >
-                    Cancelar
-                  </button>
+                    {t.name}
+                  </span>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* ── Metadata ── */}
+          <section className={styles.section}>
+            <h3 className={styles.section__label}>Detalles</h3>
+            <div className={styles.metaGrid}>
+              {incident.dueDate && (
+                <div className={styles.metaItem}>
+                  <Calendar size={14} className={styles.metaItem__icon} aria-hidden />
+                  <div>
+                    <span className={styles.metaItem__label}>Vencimiento</span>
+                    <span className={styles.metaItem__value}>
+                      {format(parseISO(incident.dueDate), "d 'de' MMMM yyyy", { locale: es })}
+                    </span>
+                  </div>
                 </div>
-              ) : (
+              )}
+              {incident.locationDescription && (
+                <div className={styles.metaItem}>
+                  <MapPin size={14} className={styles.metaItem__icon} aria-hidden />
+                  <div>
+                    <span className={styles.metaItem__label}>Ubicación</span>
+                    <span className={styles.metaItem__value}>{incident.locationDescription}</span>
+                  </div>
+                </div>
+              )}
+              {incident.media.length > 0 && (
+                <div className={styles.metaItem}>
+                  <FileText size={14} className={styles.metaItem__icon} aria-hidden />
+                  <div>
+                    <span className={styles.metaItem__label}>Archivos adjuntos</span>
+                    <span className={styles.metaItem__value}>
+                      {incident.media.length} archivo{incident.media.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                </div>
+              )}
+              <div className={styles.metaItem}>
+                <Clock size={14} className={styles.metaItem__icon} aria-hidden />
+                <div>
+                  <span className={styles.metaItem__label}>Creada</span>
+                  <span className={styles.metaItem__value}>
+                    {formatDistanceToNow(parseISO(incident.createdAt), {
+                      locale: es,
+                      addSuffix: true,
+                    })}
+                  </span>
+                </div>
+              </div>
+              <div className={styles.metaItem}>
+                <Clock size={14} className={styles.metaItem__icon} aria-hidden />
+                <div>
+                  <span className={styles.metaItem__label}>Última actualización</span>
+                  <span className={styles.metaItem__value}>
+                    {formatDistanceToNow(parseISO(incident.updatedAt), {
+                      locale: es,
+                      addSuffix: true,
+                    })}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ── Aprobación (admin+, solo mientras está pendiente) ── */}
+          {canDecideApproval && (
+            <section className={styles.section}>
+              <h3 className={styles.section__label}>Aprobación</h3>
+              <div className={styles.actions}>
                 <button
                   type="button"
-                  className={styles.rejectBtn}
-                  onClick={() => setShowRejectForm(true)}
+                  className={styles.approveBtn}
+                  onClick={handleApprove}
                   disabled={approvalPending}
                 >
-                  Rechazar
+                  {approvalPending ? 'Procesando…' : 'Aprobar'}
                 </button>
-              )}
-            </div>
-            {approvalError && (
-              <p className={styles.error} role="alert">
-                {approvalError}
-              </p>
-            )}
-          </section>
-        )}
 
-        {/* ── Acciones ── */}
-        {(canChangeStatus || canDelete) && (
-          <section className={styles.section}>
-            <h3 className={styles.section__label}>Acciones</h3>
-            <div className={styles.actions}>
-              {canChangeStatus && (
-                <select
-                  className={styles.statusSelect}
-                  value={incident.status}
-                  disabled={statusPending}
-                  aria-label="Cambiar estado"
-                  onChange={(e) => handleStatusChange(e.target.value as IncidentStatus)}
-                >
-                  {STATUS_OPTIONS.map((s) => (
-                    <option key={s} value={s}>
-                      {STATUS_LABELS[s]}
-                    </option>
-                  ))}
-                </select>
-              )}
-
-              {canDelete &&
-                (confirmingDelete ? (
-                  <div className={styles.confirmDelete}>
-                    <span>¿Eliminar esta incidencia?</span>
+                {showRejectForm ? (
+                  <div className={styles.rejectForm}>
+                    <input
+                      type="text"
+                      className={styles.rejectForm__input}
+                      placeholder="Motivo del rechazo (opcional)"
+                      value={rejectingReason}
+                      onChange={(e) => setRejectingReason(e.target.value)}
+                      disabled={approvalPending}
+                      aria-label="Motivo del rechazo"
+                    />
                     <button
                       type="button"
-                      className={styles.confirmDelete__yes}
-                      onClick={handleDelete}
-                      disabled={deletePending}
+                      className={styles.rejectForm__confirm}
+                      onClick={handleReject}
+                      disabled={approvalPending}
                     >
-                      {deletePending ? 'Eliminando…' : 'Sí, eliminar'}
+                      {approvalPending ? 'Procesando…' : 'Confirmar rechazo'}
                     </button>
                     <button
                       type="button"
-                      className={styles.confirmDelete__no}
-                      onClick={() => setConfirmingDelete(false)}
-                      disabled={deletePending}
+                      className={styles.rejectForm__cancel}
+                      onClick={() => {
+                        setShowRejectForm(false);
+                        setRejectingReason('');
+                      }}
+                      disabled={approvalPending}
                     >
                       Cancelar
                     </button>
@@ -456,21 +409,83 @@ export default function IncidentDetailModal() {
                 ) : (
                   <button
                     type="button"
-                    className={styles.deleteBtn}
-                    onClick={() => setConfirmingDelete(true)}
+                    className={styles.rejectBtn}
+                    onClick={() => setShowRejectForm(true)}
+                    disabled={approvalPending}
                   >
-                    Eliminar
+                    Rechazar
                   </button>
-                ))}
-            </div>
-            {statusError && (
-              <p className={styles.error} role="alert">
-                {statusError}
-              </p>
-            )}
-          </section>
-        )}
-      </div>
-    </div>
+                )}
+              </div>
+              {approvalError && (
+                <p className={styles.error} role="alert">
+                  {approvalError}
+                </p>
+              )}
+            </section>
+          )}
+
+          {/* ── Acciones ── */}
+          {(canChangeStatus || canDelete) && (
+            <section className={styles.section}>
+              <h3 className={styles.section__label}>Acciones</h3>
+              <div className={styles.actions}>
+                {canChangeStatus && (
+                  <select
+                    className={styles.statusSelect}
+                    value={incident.status}
+                    disabled={statusPending}
+                    aria-label="Cambiar estado"
+                    onChange={(e) => handleStatusChange(e.target.value as IncidentStatus)}
+                  >
+                    {STATUS_OPTIONS.map((s) => (
+                      <option key={s} value={s}>
+                        {STATUS_LABELS[s]}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
+                {canDelete &&
+                  (confirmingDelete ? (
+                    <div className={styles.confirmDelete}>
+                      <span>¿Eliminar esta incidencia?</span>
+                      <button
+                        type="button"
+                        className={styles.confirmDelete__yes}
+                        onClick={handleDelete}
+                        disabled={deletePending}
+                      >
+                        {deletePending ? 'Eliminando…' : 'Sí, eliminar'}
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.confirmDelete__no}
+                        onClick={() => setConfirmingDelete(false)}
+                        disabled={deletePending}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className={styles.deleteBtn}
+                      onClick={() => setConfirmingDelete(true)}
+                    >
+                      Eliminar
+                    </button>
+                  ))}
+              </div>
+              {statusError && (
+                <p className={styles.error} role="alert">
+                  {statusError}
+                </p>
+              )}
+            </section>
+          )}
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 }

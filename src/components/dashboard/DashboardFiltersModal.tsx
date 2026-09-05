@@ -6,10 +6,12 @@
  */
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
+import { AnimatePresence, motion } from 'motion/react';
 import { X } from 'lucide-react';
 import { useModalStore } from '@/store/useModalStore';
 import { useFiltersStore } from '@/store/useFiltersStore';
 import { useIssuesStore } from '@/store/useIssuesStore';
+import { useDialogMotion } from '@/hooks/useDialogMotion';
 import type { DashboardFilters, DashboardPeriod } from '@/domain/models/filters.model';
 import type { IncidentStatus, IncidentPriority, UserRef } from '@/domain/models/incident.model';
 import styles from './DashboardFiltersModal.module.scss';
@@ -74,6 +76,8 @@ export default function DashboardFiltersModal() {
   const setDashboardFilters = useFiltersStore((s) => s.setDashboardFilters);
   const resetDashboardFilters = useFiltersStore((s) => s.resetDashboardFilters);
   const incidents = useIssuesStore((s) => s.incidents);
+  const { overlay, panel } = useDialogMotion();
+  const isOpen = activeModal === 'dashboard-filters';
 
   const [draft, setDraft] = useState<DashboardFilters>(dashboardFilters);
 
@@ -100,8 +104,6 @@ export default function DashboardFiltersModal() {
     }
   }, [activeModal, dashboardFilters]);
 
-  if (activeModal !== 'dashboard-filters') return null;
-
   function handleApply() {
     setDashboardFilters(draft);
     closeModal();
@@ -113,113 +115,123 @@ export default function DashboardFiltersModal() {
   }
 
   return (
-    <div
-      className={styles.overlay}
-      role="dialog"
-      aria-modal
-      aria-label={t('filtersModalOverlayAriaLabel')}
-    >
-      <div className={styles.modal}>
-        <div className={styles.modal__header}>
-          <h2 className={styles.modal__title}>{t('filtersModalTitle')}</h2>
-          <button
-            className={styles.modal__close}
-            onClick={closeModal}
-            aria-label={t('filtersModalCloseAriaLabel')}
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        <div className={styles.modal__body}>
-          <fieldset className={styles.field}>
-            <legend className={styles.field__label}>{t('filtersModalLegendPeriod')}</legend>
-            <ChipGroup
-              options={PERIODS.map((p) => ({ value: p.value, label: t(p.labelKey) }))}
-              selected={[draft.period]}
-              onToggle={(v) => setDraft((d) => ({ ...d, period: v }))}
-            />
-          </fieldset>
-
-          <fieldset className={styles.field}>
-            <legend className={styles.field__label}>{t('filtersModalLegendStatus')}</legend>
-            <ChipGroup
-              options={STATUSES.map((s) => ({ value: s.value, label: t(s.labelKey) }))}
-              selected={draft.status}
-              onToggle={(v) => setDraft((d) => ({ ...d, status: toggle(d.status, v) }))}
-            />
-          </fieldset>
-
-          <fieldset className={styles.field}>
-            <legend className={styles.field__label}>{t('filtersModalLegendPriority')}</legend>
-            <ChipGroup
-              options={PRIORITIES.map((p) => ({ value: p.value, label: t(p.labelKey) }))}
-              selected={draft.priority}
-              onToggle={(v) => setDraft((d) => ({ ...d, priority: toggle(d.priority, v) }))}
-            />
-          </fieldset>
-
-          <fieldset className={styles.field}>
-            <legend className={styles.field__label}>{t('filtersModalLegendCreatedByUser')}</legend>
-            <div className={styles.userList}>
-              {creators.map((u) => {
-                const active = draft.createdByUser?.includes(u.id);
-                return (
-                  <button
-                    key={u.id}
-                    type="button"
-                    className={`${styles.userChip} ${active ? styles['userChip--active'] : ''}`}
-                    onClick={() =>
-                      setDraft((d) => ({ ...d, createdByUser: toggle(d.createdByUser, u.id) }))
-                    }
-                    aria-pressed={active ?? false}
-                  >
-                    <span className={styles.userChip__avatar}>{u.name.charAt(0)}</span>
-                    <span className={styles.userChip__name}>{u.name}</span>
-                  </button>
-                );
-              })}
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          className={styles.overlay}
+          variants={overlay}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          role="dialog"
+          aria-modal
+          aria-label={t('filtersModalOverlayAriaLabel')}
+        >
+          <motion.div className={styles.modal} variants={panel}>
+            <div className={styles.modal__header}>
+              <h2 className={styles.modal__title}>{t('filtersModalTitle')}</h2>
+              <button
+                className={styles.modal__close}
+                onClick={closeModal}
+                aria-label={t('filtersModalCloseAriaLabel')}
+              >
+                <X size={18} />
+              </button>
             </div>
-          </fieldset>
 
-          <fieldset className={styles.field}>
-            <legend className={styles.field__label}>
-              {t('filtersModalLegendResponsibleByUser')}
-            </legend>
-            <div className={styles.userList}>
-              {responsibles.map((u) => {
-                const active = draft.responsibleUser?.includes(u.id);
-                return (
-                  <button
-                    key={u.id}
-                    type="button"
-                    className={`${styles.userChip} ${active ? styles['userChip--active'] : ''}`}
-                    onClick={() =>
-                      setDraft((d) => ({
-                        ...d,
-                        responsibleUser: toggle(d.responsibleUser, u.id),
-                      }))
-                    }
-                    aria-pressed={active ?? false}
-                  >
-                    <span className={styles.userChip__avatar}>{u.name.charAt(0)}</span>
-                    <span className={styles.userChip__name}>{u.name}</span>
-                  </button>
-                );
-              })}
+            <div className={styles.modal__body}>
+              <fieldset className={styles.field}>
+                <legend className={styles.field__label}>{t('filtersModalLegendPeriod')}</legend>
+                <ChipGroup
+                  options={PERIODS.map((p) => ({ value: p.value, label: t(p.labelKey) }))}
+                  selected={[draft.period]}
+                  onToggle={(v) => setDraft((d) => ({ ...d, period: v }))}
+                />
+              </fieldset>
+
+              <fieldset className={styles.field}>
+                <legend className={styles.field__label}>{t('filtersModalLegendStatus')}</legend>
+                <ChipGroup
+                  options={STATUSES.map((s) => ({ value: s.value, label: t(s.labelKey) }))}
+                  selected={draft.status}
+                  onToggle={(v) => setDraft((d) => ({ ...d, status: toggle(d.status, v) }))}
+                />
+              </fieldset>
+
+              <fieldset className={styles.field}>
+                <legend className={styles.field__label}>{t('filtersModalLegendPriority')}</legend>
+                <ChipGroup
+                  options={PRIORITIES.map((p) => ({ value: p.value, label: t(p.labelKey) }))}
+                  selected={draft.priority}
+                  onToggle={(v) => setDraft((d) => ({ ...d, priority: toggle(d.priority, v) }))}
+                />
+              </fieldset>
+
+              <fieldset className={styles.field}>
+                <legend className={styles.field__label}>
+                  {t('filtersModalLegendCreatedByUser')}
+                </legend>
+                <div className={styles.userList}>
+                  {creators.map((u) => {
+                    const active = draft.createdByUser?.includes(u.id);
+                    return (
+                      <button
+                        key={u.id}
+                        type="button"
+                        className={`${styles.userChip} ${active ? styles['userChip--active'] : ''}`}
+                        onClick={() =>
+                          setDraft((d) => ({ ...d, createdByUser: toggle(d.createdByUser, u.id) }))
+                        }
+                        aria-pressed={active ?? false}
+                      >
+                        <span className={styles.userChip__avatar}>{u.name.charAt(0)}</span>
+                        <span className={styles.userChip__name}>{u.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </fieldset>
+
+              <fieldset className={styles.field}>
+                <legend className={styles.field__label}>
+                  {t('filtersModalLegendResponsibleByUser')}
+                </legend>
+                <div className={styles.userList}>
+                  {responsibles.map((u) => {
+                    const active = draft.responsibleUser?.includes(u.id);
+                    return (
+                      <button
+                        key={u.id}
+                        type="button"
+                        className={`${styles.userChip} ${active ? styles['userChip--active'] : ''}`}
+                        onClick={() =>
+                          setDraft((d) => ({
+                            ...d,
+                            responsibleUser: toggle(d.responsibleUser, u.id),
+                          }))
+                        }
+                        aria-pressed={active ?? false}
+                      >
+                        <span className={styles.userChip__avatar}>{u.name.charAt(0)}</span>
+                        <span className={styles.userChip__name}>{u.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </fieldset>
             </div>
-          </fieldset>
-        </div>
 
-        <div className={styles.modal__footer}>
-          <button type="button" className={styles.btnSecondary} onClick={handleReset}>
-            {t('filtersModalClearFilters')}
-          </button>
-          <button type="button" className={styles.btnPrimary} onClick={handleApply}>
-            {t('filtersModalApply')}
-          </button>
-        </div>
-      </div>
-    </div>
+            <div className={styles.modal__footer}>
+              <button type="button" className={styles.btnSecondary} onClick={handleReset}>
+                {t('filtersModalClearFilters')}
+              </button>
+              <button type="button" className={styles.btnPrimary} onClick={handleApply}>
+                {t('filtersModalApply')}
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

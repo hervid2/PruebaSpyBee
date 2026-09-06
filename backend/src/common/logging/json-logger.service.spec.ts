@@ -3,9 +3,10 @@ import { JsonLogger } from './json-logger.service';
 interface LoggedEntry {
   timestamp: string;
   level: string;
-  message: unknown;
+  message?: unknown;
   context?: string;
   trace?: string;
+  [field: string]: unknown;
 }
 
 function parseWrittenLine(mock: jest.Mock<boolean, [string]>): LoggedEntry {
@@ -67,5 +68,41 @@ describe('JsonLogger', () => {
     const parsed = parseWrittenLine(stdout);
     expect(parsed).not.toHaveProperty('context');
     expect(parsed).not.toHaveProperty('trace');
+  });
+
+  it('flattens an object message so Insights can query the fields by name', () => {
+    const logger = new JsonLogger();
+    logger.log(
+      { event: 'http_request', statusCode: 200, durationMs: 12.5 },
+      'HttpRequest',
+    );
+
+    const parsed = parseWrittenLine(stdout);
+    expect(parsed).toMatchObject({
+      level: 'log',
+      event: 'http_request',
+      statusCode: 200,
+      durationMs: 12.5,
+      context: 'HttpRequest',
+    });
+    expect(parsed).not.toHaveProperty('message');
+  });
+
+  it('never lets a caller field shadow the entry’s own timestamp/level', () => {
+    const logger = new JsonLogger();
+    logger.warn({ level: 'debug', timestamp: 'nope', statusCode: 404 });
+
+    const parsed = parseWrittenLine(stdout);
+    expect(parsed.level).toBe('warn');
+    expect(parsed.timestamp).not.toBe('nope');
+    expect(parsed.statusCode).toBe(404);
+  });
+
+  it('keeps a non-plain object (an Error) nested under message', () => {
+    const logger = new JsonLogger();
+    logger.error(new Error('boom'));
+
+    const parsed = parseWrittenLine(stderr);
+    expect(parsed).toHaveProperty('message');
   });
 });

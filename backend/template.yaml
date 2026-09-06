@@ -38,6 +38,19 @@ Parameters:
       Allowed CORS origin for both the API (backend CORS/helmet setup) and
       the MediaBucket's PUT CORS rule — the deployed Vercel URL in
       production (F6.3). Never '*'.
+  AlarmEmail:
+    Type: String
+    Default: ''
+    Description: >
+      Address subscribed to the alarm topic (F9.3). Optional: with it empty the
+      alarms are still created and still change state in the console, only the
+      email notification is skipped — so a deploy that forgets it degrades to
+      "no notification", never to "no alarm".
+
+Conditions:
+  # SNS rejects an empty Endpoint, so the subscription (not the topic, and not
+  # the alarms) is what gets conditioned out.
+  HasAlarmEmail: !Not [!Equals [!Ref AlarmEmail, '']]
 
 Globals:
   Function:
@@ -113,6 +126,111 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${BackendFunction}
       RetentionInDays: 14
 
+  # --- Observability (F9.3) ---------------------------------------------
+  # Three alarms, because no single metric sees every way this API can fail:
+  #
+  #   Lambda Errors     — the function never returned: init crash, unhandled
+  #                       rejection, timeout, out of memory. AllExceptionsFilter
+  #                       can't catch any of these, so nothing reaches the logs.
+  #   API Gateway 5xx   — what the browser actually got, including the failures
+  #                       where Lambda was never invoked (integration errors,
+  #                       throttling at the account concurrency ceiling).
+  #   Application 5xx   — counted off the JSON log lines the filter writes, the
+  #                       only one of the three that is a *handled* 500 with a
+  #                       requestId and a route already attached to go debug.
+  AlarmTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: FlyWorkFlow backend alarms
+
+  AlarmEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasAlarmEmail
+    Properties:
+      Protocol: email
+      Endpoint: !Ref AlarmEmail
+      TopicArn: !Ref AlarmTopic
+
+  # `notBreaching` on all three: no traffic is the normal state of a portfolio
+  # API, and INSUFFICIENT_DATA on an idle stack trains you to ignore the alarm.
+  BackendFunctionErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-lambda-errors'
+      AlarmDescription: >
+        The Lambda itself failed (crash, timeout, OOM) — no application log
+        line explains these, check the REPORT/Init lines in the log group.
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref BackendFunction
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmTopic
+
+  HttpApiServerErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-apigw-5xx'
+      AlarmDescription: >
+        API Gateway returned a 5xx to a client, whatever the cause.
+      Namespace: AWS/ApiGateway
+      MetricName: 5xx
+      Dimensions:
+        # The implicit HTTP API SAM creates from the function's events; the
+        # same logical id the ApiUrl output already resolves.
+        - Name: ApiId
+          Value: !Ref ServerlessHttpApi
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmTopic
+
+  # Reads the `statusCode` field of the JSON lines AllExceptionsFilter emits
+  # (JsonLogger, production only) — this is what makes the structured logging
+  # load-bearing rather than decorative. A JSON metric filter only matches log
+  # events that parse as JSON on their own, which is why JsonLogger writes one
+  # object per line straight to stdout and never through `console.log`.
+  ApplicationServerErrorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref BackendFunctionLogGroup
+      FilterPattern: '{ $.statusCode >= 500 }'
+      MetricTransformations:
+        - MetricNamespace: FlyWorkFlow/Backend
+          MetricName: ApplicationServerErrors
+          MetricValue: '1'
+          DefaultValue: 0
+
+  ApplicationServerErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AWS::StackName}-app-5xx'
+      AlarmDescription: >
+        A request failed inside the app. Find it with, in Logs Insights:
+        fields @timestamp, requestId, route, error
+        | filter statusCode >= 500 | sort @timestamp desc
+      Namespace: FlyWorkFlow/Backend
+      MetricName: ApplicationServerErrors
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmTopic
+
 Outputs:
   ApiUrl:
     Description: Base URL of the HTTP API (dev stage)
@@ -120,3 +238,8 @@ Outputs:
   MediaBucketName:
     Description: SAM-generated S3 bucket name for incident media attachments
     Value: !Ref MediaBucket
+  AlarmTopicArn:
+    Description: >
+      SNS topic the 5xx alarms publish to (F9.3). Subscribe by redeploying with
+      AlarmEmail set, not by adding a subscription by hand in the console.
+    Value: !Ref AlarmTopic

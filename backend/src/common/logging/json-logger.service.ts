@@ -6,6 +6,11 @@ import { LoggerService, LogLevel } from '@nestjs/common';
  * fields (level, context) queryable in CloudWatch Logs Insights instead of
  * free-text grepping. Used in production only (see `bootstrap.ts#createLogger`);
  * local dev/CI keep Nest's readable console logger.
+ *
+ * An object message is *flattened* into the entry rather than nested under
+ * `message`, so the fields `HttpLoggingInterceptor`/`AllExceptionsFilter` emit
+ * (`requestId`, `statusCode`, `durationMs`, …) are addressable in Insights as
+ * top-level names — `filter statusCode >= 500`, not `filter message.statusCode`.
  */
 export class JsonLogger implements LoggerService {
   log(message: unknown, context?: string): void {
@@ -37,7 +42,7 @@ export class JsonLogger implements LoggerService {
     const entry = {
       timestamp: new Date().toISOString(),
       level,
-      message,
+      ...toFields(message),
       ...(context ? { context } : {}),
       ...(trace ? { trace } : {}),
     };
@@ -48,4 +53,28 @@ export class JsonLogger implements LoggerService {
       process.stdout.write(line);
     }
   }
+}
+
+/**
+ * Plain objects become the entry's own fields; everything else (strings, which
+ * is what Nest's own bootstrap logging passes, arrays, Errors) stays nested
+ * under `message`.
+ */
+function toFields(message: unknown): Record<string, unknown> {
+  if (!isPlainObject(message)) return { message };
+  const fields = { ...message };
+  // `write` spreads this *after* `timestamp`/`level`, so a caller field by
+  // either name would silently replace the entry's own — every line keeps the
+  // same two anchor fields instead.
+  delete fields.timestamp;
+  delete fields.level;
+  return fields;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return false;
+  }
+  const prototype: unknown = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
 }

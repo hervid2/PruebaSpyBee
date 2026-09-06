@@ -10,7 +10,7 @@ import DocumentsView from '@/components/documents/DocumentsView';
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Documentos — FlyWorkFlow',
+  title: 'Documentos',
 };
 
 interface DocumentosPageProps {

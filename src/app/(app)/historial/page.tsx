@@ -14,7 +14,7 @@ import HistorialForbidden from '@/components/historial/HistorialForbidden';
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Historial de Incidencias — FlyWorkFlow',
+  title: 'Historial de Incidencias',
 };
 
 interface HistorialPageProps {

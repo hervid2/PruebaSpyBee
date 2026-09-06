@@ -152,9 +152,10 @@ Parallelizable with Phase 3 (there's no real dependency between frontend fixes a
 
 ## Phase 9 — Final hardening and portfolio polish
 
-**F9.1 — `feat/motion-microinteractions`** — Introduces `motion` (motion.dev): staggered entry of dashboard cards, hover on clickable cards/rows, enter/exit transitions on modals; `useReducedMotion()` respected everywhere. Docs: `requirements.md §1.11`, `best-practices.md §Motion / Animations`. Commit: `feat: add motion micro-interactions across dashboard and modals`
+**F9.1 — `feat/motion-microinteractions`** _(complete)_ — Introduces `motion` (motion.dev): staggered entry of dashboard cards, hover on clickable cards/rows, enter/exit transitions on modals; `useReducedMotion()` respected everywhere. Docs: `requirements.md §1.11`, `best-practices.md §Motion / Animations`. Commit: `feat: add motion micro-interactions across dashboard and modals`
 
-**F9.2 — `feat/seo-pass`** — Next.js metadata, `sitemap.xml`, `robots.txt`. Docs: `best-practices.md §SEO`. Commit: `feat: add SEO metadata, sitemap and robots.txt`
+**F9.2 — `feat/seo-pass`** _(complete)_ — Next.js metadata, `sitemap.xml`, `robots.txt`. Docs: `best-practices.md §SEO`. Commit: `feat: add SEO metadata, sitemap and robots.txt`
+Delivered deny-by-default indexing: the policy (public routes, robots directives, OG card, title template) lives in `src/lib/site.ts`, consumed by `app/robots.ts`, `app/sitemap.ts` and each route group's layout. `/login` is the only indexable route; `/invitar/[token]` is `noarchive` because the token is a credential. Two things the pass surfaced: `middleware.ts` was redirecting `/robots.txt` and `/sitemap.xml` to `/login` (both unreadable by crawlers — matcher now excludes them), and a nested `openGraph` block replaces rather than merges the parent's file-convention image, so `OG_IMAGE` is restated wherever `openGraph` is declared.
 
 **F9.3 — `chore/observability-pass`** — Structured logging, CloudWatch alarms for 5xx errors. Commit: `chore(backend): add structured logging and basic CloudWatch alarms`
 

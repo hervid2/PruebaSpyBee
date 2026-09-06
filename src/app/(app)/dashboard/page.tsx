@@ -12,7 +12,7 @@ import IncidentDetailModal from '@/components/modals/incident-detail/IncidentDet
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Dashboard de Incidencias — FlyWorkFlow',
+  title: 'Dashboard de Incidencias',
 };
 
 export default async function DashboardPage() {

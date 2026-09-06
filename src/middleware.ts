@@ -51,8 +51,12 @@ export async function middleware(request: NextRequest) {
   }
 }
 
-// Match everything except Next.js internals, static assets and the
-// generated icon/OG-image routes (favicon.ico, icon.svg, opengraph-image).
+// Match everything except Next.js internals, static assets, the generated
+// icon/OG-image routes (favicon.ico, icon.svg, opengraph-image) and the SEO
+// files — a crawler fetching robots.txt or sitemap.xml has no session, and
+// redirecting it to /login would make both unreadable.
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|icon.svg|opengraph-image|public/).*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|icon.svg|opengraph-image|robots.txt|sitemap.xml|public/).*)',
+  ],
 };

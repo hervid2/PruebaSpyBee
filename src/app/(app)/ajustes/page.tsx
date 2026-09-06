@@ -7,7 +7,7 @@
 import SettingsView from '@/components/settings/SettingsView';
 
 export const metadata = {
-  title: 'Ajustes — FlyWorkFlow',
+  title: 'Ajustes',
 };
 
 export default function AjustesPage() {

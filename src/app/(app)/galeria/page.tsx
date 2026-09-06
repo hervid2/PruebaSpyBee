@@ -10,7 +10,7 @@ import GalleryView from '@/components/gallery/GalleryView';
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Galería — FlyWorkFlow',
+  title: 'Galería',
 };
 
 interface GaleriaPageProps {

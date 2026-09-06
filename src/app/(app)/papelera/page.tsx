@@ -12,7 +12,7 @@ import TrashForbidden from '@/components/trash/TrashForbidden';
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Papelera — FlyWorkFlow',
+  title: 'Papelera',
 };
 
 interface TrashPageProps {

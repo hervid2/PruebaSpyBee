@@ -35,6 +35,9 @@ jobs:
       # template default during the guided run — so all three, plus the
       # three that ARE already in samconfig.toml, are passed explicitly here
       # to avoid CLI --parameter-overrides silently dropping the latter.
+      # AlarmEmail (F9.3) joins them for the same reason: an unset ALARM_EMAIL
+      # secret resolves to an empty string, which the template's HasAlarmEmail
+      # condition reads as "create the alarms, skip the email subscription".
       - name: sam deploy
         run: |
           sam deploy --no-confirm-changeset --no-fail-on-empty-changeset \
@@ -44,4 +47,5 @@ jobs:
               FrontendOrigin="${{ secrets.FRONTEND_ORIGIN }}" \
               JwtAccessExpiresInSeconds="900" \
               JwtRefreshExpiresInDays="7" \
-              S3PresignedUrlExpiresInSeconds="300"
+              S3PresignedUrlExpiresInSeconds="300" \
+              AlarmEmail="${{ secrets.ALARM_EMAIL }}"

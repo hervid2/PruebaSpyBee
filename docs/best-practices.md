@@ -97,6 +97,15 @@ Code is documented minimally but professionally — it's not "no comments" flatl
 - **Each pipeline is scoped to its folder** (`paths: backend/**` vs. everything else) so the frontend CI doesn't re-run when only the backend changes, and vice versa.
 - **Log retention explicitly configured** in CloudWatch (14 days) — a log group with no retention accumulates cost indefinitely even though ingestion's free tier is perpetual.
 
+## Observability
+
+- **One structured line per request, exactly one** — `HttpLoggingInterceptor` logs the successes, `AllExceptionsFilter` logs the failures, and neither logs what the other does. A guard rejection (401/403/429) never reaches an interceptor, which is why the failure line belongs to the filter and not to a `catchError` in the interceptor.
+- **A correlation id on every response** (`x-request-id`, echoed back if the caller sent one, otherwise API Gateway's own id): Lambda only stamps its RequestId onto `console.*` output, so a logger writing straight to stdout has to carry its own — without it, the lines of one request can't be grouped in Logs Insights.
+- **Log the route pattern, never the concrete URL or the body**: `/invitations/:token`, not `/invitations/<the actual token>`. Paths and bodies carry credentials, and CloudWatch keeps whatever it is given for the whole retention window.
+- **A 5xx response body says nothing but the request id** — a Prisma error message names columns and queries. The stack goes to the log, the id goes to the user, and the two meet in Logs Insights. 4xx bodies pass through untouched: `class-validator`'s field messages are part of the contract the frontend renders.
+- **Alarm on each failure surface separately**, because none of them sees the others: Lambda `Errors` (crash, timeout, OOM — nothing was logged because nothing ran), API Gateway `5xx` (what the client actually got), and a metric filter over the application's own JSON logs (a handled 500, already carrying a route and a request id). The first two are the safety net; only the third tells you where to look.
+- **Alarms are template resources like any other** — `TreatMissingData: notBreaching` so an idle portfolio API doesn't sit in `INSUFFICIENT_DATA` and train you to ignore it.
+
 ## SEO
 
 - **Next.js Metadata API** (`generateMetadata`) instead of manual `<head>`.

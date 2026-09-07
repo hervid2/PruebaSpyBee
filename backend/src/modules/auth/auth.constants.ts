@@ -26,3 +26,24 @@ export const LOGIN_THROTTLE_TTL_MS = 60_000;
  */
 export const APP_THROTTLE_LIMIT = 100;
 export const APP_THROTTLE_TTL_MS = 60_000;
+
+/**
+ * Account-level brute-force protection (F9.5). `LOGIN_THROTTLE_LIMIT` above
+ * counts per IP, in each Lambda instance's own memory — so it never saw an
+ * attempt spread across many addresses converging on one account, which is
+ * the shape a real credential-stuffing run takes. These bound that instead:
+ * failures are counted on the `User` row, in Postgres, which is the only
+ * counter in this stack that is genuinely global.
+ *
+ * 10 rather than 5: this limit is reached by an attacker on their tenth guess
+ * but by a real person who simply mistyped, so it sits above the range a
+ * legitimate user reaches on a bad morning. The window is short and expires
+ * on its own, because a lockout an attacker can trigger against a known email
+ * is itself a denial of service against that user — 15 minutes bounds the
+ * damage while still costing a distributed attempt three orders of magnitude
+ * in throughput. Existing sessions are deliberately untouched: locking the
+ * account is about the password, and cutting a signed-in user off is exactly
+ * the outcome the attacker would be buying.
+ */
+export const ACCOUNT_LOCKOUT_THRESHOLD = 10;
+export const ACCOUNT_LOCKOUT_WINDOW_MS = 15 * 60_000;

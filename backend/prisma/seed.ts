@@ -23,6 +23,7 @@ import { PrismaClient, ApprovalStatus } from '@prisma/client';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import * as bcrypt from 'bcrypt';
+import { BCRYPT_SALT_ROUNDS } from '../src/common/constants/security.constants';
 
 const prisma = new PrismaClient();
 
@@ -209,7 +210,7 @@ function hashOf(text: string): number {
 }
 
 async function main() {
-  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
+  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, BCRYPT_SALT_ROUNDS);
 
   const orgsByName = new Map<string, { id: string }>();
   for (const def of ORG_DEFS) {

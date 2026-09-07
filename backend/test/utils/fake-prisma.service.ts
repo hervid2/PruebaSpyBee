@@ -30,6 +30,9 @@ export interface FakeUser {
   role: Role;
   avatarUrl: string | null;
   createdAt: Date;
+  // Account lockout (F9.5) — see `AuthService.validateCredentials`.
+  failedLoginAttempts: number;
+  lockedUntil: Date | null;
 }
 
 interface FakeRefreshToken {
@@ -314,6 +317,8 @@ export class FakePrismaService {
     orgId: string;
     role: Role;
     name?: string;
+    failedLoginAttempts?: number;
+    lockedUntil?: Date | null;
   }): Promise<FakeUser> {
     const user: FakeUser = {
       id: this.nextId(),
@@ -325,6 +330,8 @@ export class FakePrismaService {
       role: params.role,
       avatarUrl: null,
       createdAt: new Date(),
+      failedLoginAttempts: params.failedLoginAttempts ?? 0,
+      lockedUntil: params.lockedUntil ?? null,
     };
     this.users.push(user);
     return user;
@@ -375,6 +382,8 @@ export class FakePrismaService {
         id: this.nextId(),
         avatarUrl: null,
         createdAt: new Date(),
+        failedLoginAttempts: 0,
+        lockedUntil: null,
         ...data,
       };
       this.users.push(user);
@@ -397,7 +406,9 @@ export class FakePrismaService {
       this.refreshTokens.push(row);
       return Promise.resolve(row);
     },
-    findFirst: ({
+    // `findUnique`, matching the service after `RefreshToken.tokenHash`
+    // became `@unique` (F9.5).
+    findUnique: ({
       where,
     }: {
       where: { tokenHash: string };

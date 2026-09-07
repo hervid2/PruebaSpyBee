@@ -11,6 +11,7 @@ import type { User } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { hashToken } from '../../common/utils/hash-token.util';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface';
+import { BCRYPT_SALT_ROUNDS } from '../../common/constants/security.constants';
 import { CreateInvitationDto } from './dto/create-invitation.dto';
 import {
   InvitationResponseDto,
@@ -19,8 +20,6 @@ import {
 import { InvitationPreviewDto } from './dto/invitation-preview.dto';
 import { AcceptInvitationDto } from './dto/accept-invitation.dto';
 import { INVITATION_TTL_DAYS } from './invitations.constants';
-
-const BCRYPT_SALT_ROUNDS = 10;
 
 @Injectable()
 export class InvitationsService {

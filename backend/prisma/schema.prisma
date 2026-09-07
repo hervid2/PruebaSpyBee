@@ -3,7 +3,7 @@
 // repository root now follows this file, not the other way around).
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   // "native" for local dev/CI; "rhel-openssl-3.0.x" matches the Amazon
   // Linux 2023 base of the Lambda Node.js container image (F3.4/F3.5).
   binaryTargets = ["native", "rhel-openssl-3.0.x"]
@@ -96,6 +96,15 @@ model User {
   avatarUrl    String?
   createdAt    DateTime @default(now())
 
+  // Account-level brute-force protection (F9.5). `@nestjs/throttler` counts
+  // per IP in each Lambda instance's own memory, so it never saw a
+  // distributed attempt spread across addresses converging on one account.
+  // These two columns are in Postgres precisely because that is the one place
+  // in this stack where a counter is genuinely global — see
+  // `AuthService.validateCredentials`.
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+
   organization      Organization       @relation(fields: [orgId], references: [id])
   ownedIncidents    Incident[]         @relation("IncidentOwner")
   assignedIncidents IncidentAssignee[]
@@ -115,7 +124,7 @@ model Project {
   name      String
   createdAt DateTime @default(now())
 
-  organization Organization @relation(fields: [orgId], references: [id])
+  organization Organization  @relation(fields: [orgId], references: [id])
   incidents    Incident[]
   plans        ProjectPlan[]
 
@@ -254,9 +263,19 @@ model ProjectPlan {
 }
 
 model RefreshToken {
-  id        String    @id @default(uuid())
-  userId    String
-  tokenHash String
+  id String @id @default(uuid())
+
+  userId String
+
+  // Unique, like `Invitation.tokenHash` and `ExportToken.tokenHash` (F9.5).
+  // This model was the outlier, which mattered more than consistency: F9.4's
+  // reuse detection is built on "one raw token names exactly one row", and
+  // without the constraint that was an assumption the database never held up
+  // — `AuthService.refresh` had to `findFirst` and would have silently picked
+  // one row out of several. The values are SHA-256 of 64 random bytes, so no
+  // real collision exists to migrate around.
+  tokenHash String @unique
+
   expiresAt DateTime
   revokedAt DateTime?
   createdAt DateTime  @default(now())

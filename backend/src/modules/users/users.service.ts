@@ -7,10 +7,9 @@ import * as bcrypt from 'bcrypt';
 import type { User } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthService } from '../auth/auth.service';
+import { BCRYPT_SALT_ROUNDS } from '../../common/constants/security.constants';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
-
-const BCRYPT_SALT_ROUNDS = 10;
 
 @Injectable()
 export class UsersService {

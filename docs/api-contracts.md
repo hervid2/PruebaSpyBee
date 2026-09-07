@@ -15,12 +15,12 @@
 
 ## Auth (`requirements.md §1.1`)
 
-| Method and route       | Auth                  | Request                            | Response                                                  | Errors                                              |
-| ---------------------- | --------------------- | ---------------------------------- | --------------------------------------------------------- | --------------------------------------------------- |
-| `POST /auth/login`     | public                | `{ email, password }`              | `200 { accessToken }` + `Set-Cookie refreshToken`         | `401` invalid credentials · `429` strict rate limit |
-| `POST /auth/refresh`   | `refreshToken` cookie | —                                  | `200 { accessToken }` + rotated `Set-Cookie refreshToken` | `401` cookie missing, expired or revoked            |
-| `POST /auth/logout`    | Bearer                | —                                  | `204` — revokes the refresh token in the DB               | `401`                                               |
-| `PATCH /auth/password` | Bearer                | `{ currentPassword, newPassword }` | `204`                                                     | `400` weak password · `401` wrong current password  |
+| Method and route       | Auth                  | Request                            | Response                                                  | Errors                                                                                                                  |
+| ---------------------- | --------------------- | ---------------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `POST /auth/login`     | public                | `{ email, password }`              | `200 { accessToken }` + `Set-Cookie refreshToken`         | `401` invalid credentials · `429` strict per-IP rate limit, or the account locked after too many failed attempts (F9.5) |
+| `POST /auth/refresh`   | `refreshToken` cookie | —                                  | `200 { accessToken }` + rotated `Set-Cookie refreshToken` | `401` cookie missing, expired or revoked                                                                                |
+| `POST /auth/logout`    | Bearer                | —                                  | `204` — revokes the refresh token in the DB               | `401`                                                                                                                   |
+| `PATCH /auth/password` | Bearer                | `{ currentPassword, newPassword }` | `204`                                                     | `400` weak password · `401` wrong current password                                                                      |
 
 ## Incidents (`requirements.md §1.2`)
 

@@ -45,10 +45,14 @@ function redirectToLogin(request: NextRequest, pathname: string) {
  * The `.set()` on the request headers is load-bearing beyond just adding the
  * policy: it *replaces* any `Content-Security-Policy` the client sent, so the
  * value Next derives a nonce from is always this function's own, never
- * attacker text. That is what keeps this app clear of CVE-2026-44581 (a
- * malformed inbound CSP request header reflected into the rendered HTML,
- * unpatched on next@14 — see roadmap.md F9.4), whose documented workaround is
- * exactly this. Do not narrow it to only setting the header when absent.
+ * attacker text. That began as the documented workaround for CVE-2026-44581
+ * (a malformed inbound CSP request header reflected into the rendered HTML,
+ * unpatched on next@14 — see roadmap.md F9.4). F9.5's upgrade to next@16 fixes
+ * that at the source, so this is no longer the only thing standing in front of
+ * it — but it stays, because "the policy this app serves is the one this
+ * function wrote" is the property worth holding regardless of which framework
+ * version is underneath. Do not narrow it to only setting the header when
+ * absent; the e2e case in security-headers.spec.ts exists to catch that.
  */
 function allowWithCsp(request: NextRequest): NextResponse {
   const nonce = crypto.randomUUID();

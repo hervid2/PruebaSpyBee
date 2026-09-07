@@ -29,13 +29,13 @@ jobs:
       # the job log whatever the gate does with it.
       - name: Audit dependencies (report)
         run: npm audit || true
-      # Gated at `critical`, not `high` like backend-ci.yml, and deliberately:
-      # the five highs open today are all transitive under next@14 (postcss,
-      # glob, and next itself), and npm's only offered fix is next@16 — a
-      # framework major, not a patch. A gate set to `high` would be red from
-      # the day it was added, which is a gate nobody reads. Lower this to
-      # `high` as part of that upgrade.
-      - run: npm audit --audit-level=critical
+      # `high`, matching backend-ci.yml (F9.5). F9.4 had to set this to
+      # `critical` because five highs were open under next@14 — postcss, glob,
+      # and next itself — with no fix short of the framework major, and a gate
+      # that is red from the day it is added is a gate nobody reads. That major
+      # landed in F9.5 and the tree is clean, so the asymmetry is gone: both
+      # halves of the project now stop for the same severity.
+      - run: npm audit --audit-level=high
       - run: npm run lint
       - run: npm run type-check
       - run: npm run test -- --coverage

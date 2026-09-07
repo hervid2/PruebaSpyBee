@@ -44,7 +44,13 @@ const securityHeaders = [
 const nextConfig = {
   transpilePackages: ['mapbox-gl'],
   sassOptions: {
-    includePaths: ['./src/styles'],
+    // `loadPaths`, not the legacy `includePaths` (F9.5), and now load-bearing
+    // rather than a convenience: every `.scss` in this project imports the
+    // shared partials through it (`@use 'abstracts/mixins'`), where they used
+    // to go through the webpack `@` alias. next@16 builds with Turbopack by
+    // default, which does not resolve that alias inside SCSS — resolving
+    // through Sass's own load path works under either bundler.
+    loadPaths: ['./src/styles'],
   },
   images: {
     remotePatterns: [

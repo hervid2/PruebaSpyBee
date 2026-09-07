@@ -57,17 +57,22 @@ export class ReportsService {
   }
 
   /**
-   * `GET /reports/dashboard-data` — public, gated entirely by `query.token`
-   * (no session/CurrentUser here). Computes aggregates in memory over the
-   * matched incidents, same small-scale approach the frontend's own
+   * `GET /reports/dashboard-data` — public, gated entirely by the data token
+   * (no session/CurrentUser here). The token arrives either in the
+   * `X-Data-Token` header or, for tools that can only be handed a URL, as
+   * `?token=`; see `reports.constants.ts` for why both exist and why the
+   * header takes precedence. Computes aggregates in memory over the matched
+   * incidents, same small-scale approach the frontend's own
    * `dashboard-metrics.selector.ts` already uses for this dataset size.
    */
   async getDashboardData(
     query: DashboardDataQueryDto,
+    headerToken?: string,
   ): Promise<DashboardDataResponseDto> {
-    if (!query.token) throw new UnauthorizedException('Missing data token');
+    const token = headerToken?.trim() || query.token;
+    if (!token) throw new UnauthorizedException('Missing data token');
     const tokenRecord = await this.prisma.exportToken.findUnique({
-      where: { tokenHash: hashToken(query.token) },
+      where: { tokenHash: hashToken(token) },
     });
     if (!tokenRecord) throw new UnauthorizedException('Invalid data token');
 

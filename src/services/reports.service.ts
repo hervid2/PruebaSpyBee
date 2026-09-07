@@ -41,6 +41,11 @@ export async function generateDataToken(): Promise<DataTokenCreated> {
   });
   return {
     ...res,
+    // Still `?token=`, deliberately: the whole point of this feature is a URL
+    // that can be pasted into Power BI's Web connector or Looker Studio, and
+    // several of those paths accept nothing but a URL. A caller that *can*
+    // send a header should use `X-Data-Token` instead (F9.5) — the API accepts
+    // either and prefers the header.
     dashboardDataUrl: `${API_BASE_URL}/reports/dashboard-data?token=${res.token}`,
   };
 }

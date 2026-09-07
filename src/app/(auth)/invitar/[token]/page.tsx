@@ -5,7 +5,7 @@
  * name/password; a successful accept auto-logs them in exactly like the real
  * login page does (getMe + useAuthStore.login), then redirects to /mapa.
  */
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
@@ -28,8 +28,12 @@ import styles from './Invitar.module.scss';
 
 type PreviewState = 'loading' | 'ready' | 'notFound' | 'gone';
 
-export default function InvitarAceptarPage({ params }: { params: { token: string } }) {
-  const { token } = params;
+export default function InvitarAceptarPage({ params }: { params: Promise<{ token: string }> }) {
+  // `params` is a promise since next@16, in Client Components too (F9.5).
+  // The hand-written type here used to say otherwise, which is why nothing
+  // failed to compile: `params.token` would simply have been `undefined` at
+  // runtime and every invitation link would have previewed as "not found".
+  const { token } = use(params);
   const t = useTranslations('invitar');
   const router = useRouter();
   const loginAction = useAuthStore((s) => s.login);

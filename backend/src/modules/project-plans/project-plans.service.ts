@@ -48,7 +48,7 @@ export class ProjectPlansService {
       );
     }
 
-    const key = `projects/${projectId}/plans/${randomUUID()}-${sanitizeFilename(dto.filename)}`;
+    const key = `${planKeyPrefix(projectId)}${randomUUID()}-${sanitizeFilename(dto.filename)}`;
     return this.storage.getPresignedUploadUrl(key, dto.contentType);
   }
 
@@ -65,6 +65,19 @@ export class ProjectPlansService {
       );
     }
 
+    // Same reasoning as `MediaService.create` (F9.4): `fileUrl` is client
+    // text, and a plan's URL is rendered as a link/preview and used to pick
+    // the object to delete, so it is checked before it is stored.
+    const key = this.storage.resolveOwnKey(
+      dto.fileUrl,
+      planKeyPrefix(projectId),
+    );
+    if (!key) {
+      throw new BadRequestException(
+        'fileUrl must be an upload URL issued for this project',
+      );
+    }
+
     const plan = await this.prisma.projectPlan.create({
       data: {
         projectId,
@@ -72,7 +85,7 @@ export class ProjectPlansService {
         type: dto.type,
         format: dto.format,
         size: dto.size,
-        url: dto.fileUrl,
+        url: this.storage.publicUrlForKey(key),
       },
     });
     return toProjectPlanResponseDto(plan);
@@ -101,7 +114,13 @@ export class ProjectPlansService {
       throw new NotFoundException();
     }
 
-    await this.storage.deleteObject(keyFromUrl(plan.url));
+    const key = this.storage.resolveOwnKey(
+      plan.url,
+      planKeyPrefix(plan.projectId),
+    );
+    if (key) {
+      await this.storage.deleteObject(key);
+    }
     await this.prisma.projectPlan.delete({ where: { id: plan.id } });
   }
 
@@ -123,7 +142,7 @@ function sanitizeFilename(filename: string): string {
   return filename.replace(/[^a-zA-Z0-9._-]/g, '_');
 }
 
-/** Recovers the S3 object key from a `fileUrl` produced by `S3StorageProvider`. */
-function keyFromUrl(url: string): string {
-  return decodeURIComponent(new URL(url).pathname.replace(/^\//, ''));
+/** The single key namespace a project's plans may live under — signed on the way out, required on the way back. */
+function planKeyPrefix(projectId: string): string {
+  return `projects/${projectId}/plans/`;
 }

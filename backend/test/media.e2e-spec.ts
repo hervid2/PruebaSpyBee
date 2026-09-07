@@ -210,8 +210,7 @@ describe('Media (e2e)', () => {
         .post(`/incidents/${incident.id}/media`)
         .set('Authorization', `Bearer ${token}`)
         .send({
-          fileUrl:
-            'https://fake-bucket.s3.fake-region.amazonaws.com/incidents/x/leak.jpg',
+          fileUrl: `https://fake-bucket.s3.fake-region.amazonaws.com/incidents/${incident.id}/uuid-leak.jpg`,
           name: 'leak.jpg',
           type: 'image',
           format: 'jpg',
@@ -224,6 +223,56 @@ describe('Media (e2e)', () => {
       expect(body.status).toBe('uploaded');
     });
 
+    // F9.4. The two-step upload hands `fileUrl` back from the browser, and
+    // the value is later rendered by the gallery and turned into the key the
+    // delete path erases — so an attacker-chosen URL is both a stored-XSS
+    // vector and a way to point a delete at somebody else's object.
+    it.each([
+      ['a host the attacker controls', 'https://attacker.test/x.jpg'],
+      ['a javascript: URL', 'javascript:alert(document.cookie)'],
+      [
+        "another incident's key in our own bucket",
+        'https://fake-bucket.s3.fake-region.amazonaws.com/incidents/some-other-incident/victim.jpg',
+      ],
+    ])('rejects a forged fileUrl (%s) with 400', async (_label, fileUrl) => {
+      const token = await loginAs(app, orgAMember, 'password123');
+
+      await request(app.getHttpServer())
+        .post(`/incidents/${incident.id}/media`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          fileUrl,
+          name: 'forged.jpg',
+          type: 'image',
+          format: 'jpg',
+          size: 1024,
+        })
+        .expect(400);
+
+      expect(prisma.medias).toHaveLength(0);
+    });
+
+    it('stores the canonical URL, not the client string with its query and fragment', async () => {
+      const token = await loginAs(app, orgAMember, 'password123');
+      const key = `incidents/${incident.id}/uuid-photo.jpg`;
+
+      const res = await request(app.getHttpServer())
+        .post(`/incidents/${incident.id}/media`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          fileUrl: `https://fake-bucket.s3.fake-region.amazonaws.com/${key}?evil=1#frag`,
+          name: 'photo.jpg',
+          type: 'image',
+          format: 'jpg',
+          size: 1024,
+        })
+        .expect(201);
+
+      expect((res.body as { url: string }).url).toBe(
+        `https://fake-bucket.s3.fake-region.amazonaws.com/${key}`,
+      );
+    });
+
     it('rejects a declared size over the limit for its type with 400', async () => {
       const token = await loginAs(app, orgAMember, 'password123');
 
@@ -231,8 +280,7 @@ describe('Media (e2e)', () => {
         .post(`/incidents/${incident.id}/media`)
         .set('Authorization', `Bearer ${token}`)
         .send({
-          fileUrl:
-            'https://fake-bucket.s3.fake-region.amazonaws.com/incidents/x/huge.jpg',
+          fileUrl: `https://fake-bucket.s3.fake-region.amazonaws.com/incidents/${incident.id}/uuid-huge.jpg`,
           name: 'huge.jpg',
           type: 'image',
           format: 'jpg',
@@ -376,6 +424,25 @@ describe('Media (e2e)', () => {
         .expect(204);
 
       expect(storage.deletedKeys).toHaveLength(1);
+      expect(prisma.medias.find((m) => m.id === media.id)).toBeUndefined();
+    });
+
+    it('leaves S3 alone when a stored URL does not resolve to this incident’s key', async () => {
+      // A row written before the F9.4 validation existed can still hold any
+      // URL at all; deleting it must not turn into a delete of whatever key
+      // that URL happens to name.
+      const token = await loginAs(app, orgAMember, 'password123');
+      const media = await prisma.seedMedia({
+        incidentId: incident.id,
+        url: 'https://fake-bucket.s3.fake-region.amazonaws.com/incidents/victim/secret.jpg',
+      });
+
+      await request(app.getHttpServer())
+        .delete(`/media/${media.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .expect(204);
+
+      expect(storage.deletedKeys).toHaveLength(0);
       expect(prisma.medias.find((m) => m.id === media.id)).toBeUndefined();
     });
 

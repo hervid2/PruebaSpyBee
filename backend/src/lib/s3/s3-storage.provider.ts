@@ -44,13 +44,43 @@ export class S3StorageProvider implements StorageProvider {
     const uploadUrl = await getSignedUrl(this.client, command, {
       expiresIn: this.expiresInSeconds,
     });
-    const fileUrl = `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
-    return { uploadUrl, fileUrl };
+    return { uploadUrl, fileUrl: this.publicUrlForKey(key) };
   }
 
   async deleteObject(key: string): Promise<void> {
     await this.client.send(
       new DeleteObjectCommand({ Bucket: this.bucket, Key: key }),
     );
+  }
+
+  /** See `StorageProvider.resolveOwnKey` — the origin check is what makes the key trustworthy. */
+  resolveOwnKey(fileUrl: string, expectedPrefix: string): string | null {
+    let parsed: URL;
+    try {
+      parsed = new URL(fileUrl);
+    } catch {
+      return null;
+    }
+    // Comparing whole origins (not `hostname.endsWith(...)`) also pins the
+    // scheme: `http://<bucket>.s3.<region>.amazonaws.com` is a different
+    // origin and is rejected, as is any lookalike host.
+    if (parsed.origin !== this.publicOrigin) return null;
+
+    const key = decodeURIComponent(parsed.pathname.replace(/^\//, ''));
+    // `new URL` collapses a literal `../` before the prefix check below ever
+    // sees it, but leaves `%2e%2e` alone — which `decodeURIComponent` then
+    // turns back into a segment that satisfies the prefix while naming a key
+    // outside it. No key this provider issues contains `..`, so refusing it
+    // outright closes that gap.
+    if (!key || key.includes('..')) return null;
+    return key.startsWith(expectedPrefix) ? key : null;
+  }
+
+  publicUrlForKey(key: string): string {
+    return `${this.publicOrigin}/${key}`;
+  }
+
+  private get publicOrigin(): string {
+    return `https://${this.bucket}.s3.${this.region}.amazonaws.com`;
   }
 }

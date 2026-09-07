@@ -16,6 +16,18 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      # F9.4 — the `npm audit` step `best-practices.md §Security` asks for and
+      # neither pipeline had. Always printed in full, so the whole list is in
+      # the job log whatever the gate does with it.
+      - name: Audit dependencies (report)
+        run: npm audit || true
+      # Gated at `critical`, not `high` like backend-ci.yml, and deliberately:
+      # the five highs open today are all transitive under next@14 (postcss,
+      # glob, and next itself), and npm's only offered fix is next@16 — a
+      # framework major, not a patch. A gate set to `high` would be red from
+      # the day it was added, which is a gate nobody reads. Lower this to
+      # `high` as part of that upgrade.
+      - run: npm audit --audit-level=critical
       - run: npm run lint
       - run: npm run type-check
       - run: npm run test -- --coverage

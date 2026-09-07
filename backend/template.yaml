@@ -31,6 +31,15 @@ Parameters:
     Type: String
     Default: '300'
     Description: How long a presigned media upload URL stays valid (F5.5).
+  S3PresignedDownloadExpiresInSeconds:
+    Type: String
+    Default: '1800'
+    Description: >
+      How long a presigned media *download* URL stays valid (F9.6). Longer than
+      the upload one on purpose: an upload URL is spent seconds after it is
+      issued, while a download URL has to outlive however long someone leaves
+      the gallery open — an expired one is a broken image with no recovery but
+      a reload.
   FrontendOrigin:
     Type: String
     Default: 'http://localhost:3000'
@@ -170,6 +179,7 @@ Resources:
           JWT_REFRESH_EXPIRES_IN_DAYS: !Ref JwtRefreshExpiresInDays
           S3_BUCKET_NAME: !Ref MediaBucket
           S3_PRESIGNED_URL_EXPIRES_IN_SECONDS: !Ref S3PresignedUrlExpiresInSeconds
+          S3_PRESIGNED_DOWNLOAD_EXPIRES_IN_SECONDS: !Ref S3PresignedDownloadExpiresInSeconds
           FRONTEND_ORIGIN: !Ref FrontendOrigin
           ENABLE_API_DOCS: !Ref EnableApiDocs
           NODE_ENV: production
@@ -318,6 +328,13 @@ Outputs:
   MediaBucketName:
     Description: SAM-generated S3 bucket name for incident media attachments
     Value: !Ref MediaBucket
+  MediaBucketHost:
+    Description: >
+      Host to set as the frontend's NEXT_PUBLIC_MEDIA_HOST (F9.6). `next/image`
+      refuses a remote host that is not in next.config.mjs's remotePatterns, so
+      without this the gallery throws on every tile. Output here rather than
+      left to be assembled by hand, because the bucket name is generated.
+    Value: !Sub '${MediaBucket}.s3.${AWS::Region}.amazonaws.com'
   AlarmTopicArn:
     Description: >
       SNS topic the 5xx alarms publish to (F9.3). Subscribe by redeploying with

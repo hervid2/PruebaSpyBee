@@ -23,6 +23,36 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      # F9.6. Migrations run here because nothing else in the pipeline ever ran
+      # them: `sam deploy` only replaces the Lambda image, and the image itself
+      # cannot migrate — the runtime stage of the Dockerfile copies `dist`,
+      # `node_modules` and `package.json`, so `prisma/migrations` is not even
+      # in it. Every migration up to F9.5 was applied by hand from a developer
+      # machine, which worked only for as long as nobody forgot.
+      #
+      # F9.5 is what made forgetting fatal rather than untidy: it adds columns
+      # to `User`, and the generated client selects every scalar field, so a
+      # new image against an un-migrated database answers P2022 to any query
+      # touching a user — login, /users/me, the JWT strategy. The whole API.
+      #
+      # Before `sam deploy`, deliberately. Prisma migrations here are additive
+      # (new nullable columns, a new unique index), so the old image keeps
+      # working against the new schema for the minutes between the two steps,
+      # while the reverse order leaves the new image talking to the old schema
+      # — the outage described above. A destructive migration would need the
+      # expand/contract split instead, and must not simply be dropped in here.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Install dependencies (for the Prisma CLI)
+        run: npm ci
+      - name: Apply pending migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npx prisma migrate deploy
+
       - uses: aws-actions/setup-sam@v2
 
       - name: sam build
@@ -48,4 +78,5 @@ jobs:
               JwtAccessExpiresInSeconds="900" \
               JwtRefreshExpiresInDays="7" \
               S3PresignedUrlExpiresInSeconds="300" \
+              S3PresignedDownloadExpiresInSeconds="1800" \
               AlarmEmail="${{ secrets.ALARM_EMAIL }}"

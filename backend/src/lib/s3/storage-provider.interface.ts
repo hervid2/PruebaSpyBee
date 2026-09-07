@@ -43,6 +43,25 @@ export interface StorageProvider {
    */
   headObject(key: string): Promise<StoredObject | null>;
 
+  /**
+   * A URL that actually reads the object (F9.6).
+   *
+   * Until this existed there was no read path at all: rows stored the bucket's
+   * canonical URL and the gallery pointed `<img src>` straight at it, which a
+   * bucket with public access blocked answers with 403. The demo never showed
+   * it because the seeded media points at picsum.photos.
+   *
+   * `downloadFilename` signs `ResponseContentDisposition: attachment`, which
+   * is what stops a PDF from rendering on the bucket's own origin — the
+   * hardening F9.5 wanted and had nowhere to put. It is a *response* override
+   * carried in the signature, so the server decides it; the PUT-time header
+   * alternative would have to be sent back verbatim by the browser.
+   */
+  getPresignedDownloadUrl(
+    key: string,
+    options?: { downloadFilename?: string },
+  ): Promise<string>;
+
   deleteObject(key: string): Promise<void>;
 
   /**

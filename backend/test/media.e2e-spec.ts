@@ -32,6 +32,7 @@ interface MediaBody {
 interface GalleryItemBody {
   id: string;
   type: string;
+  url: string;
   createdAt: string;
   incident: {
     id: string;
@@ -330,7 +331,17 @@ describe('Media (e2e)', () => {
         .send({ fileUrl: `${ORIGIN}/${key}?evil=1#frag`, name: 'photo.jpg' })
         .expect(201);
 
-      expect((res.body as { url: string }).url).toBe(`${ORIGIN}/${key}`);
+      // The row keeps the canonical form — that is the F9.4 property, and it
+      // is what every later read re-derives its key from.
+      expect(prisma.medias[0].url).toBe(`${ORIGIN}/${key}`);
+      // The response carries a signed read URL instead, because the UI renders
+      // this object immediately and the canonical one is not fetchable (F9.6).
+      const responseUrl = new URL((res.body as { url: string }).url);
+      expect(responseUrl.origin + responseUrl.pathname).toBe(
+        `${ORIGIN}/${key}`,
+      );
+      expect(responseUrl.searchParams.get('X-Amz-Signature')).toBeTruthy();
+      expect(responseUrl.searchParams.get('evil')).toBeNull();
     });
   });
 
@@ -418,6 +429,72 @@ describe('Media (e2e)', () => {
       expect(body.items.some((m) => m.incident.id === otherIncident.id)).toBe(
         false,
       );
+    });
+
+    /**
+     * F9.6. Rows store the bucket's canonical URL, which a browser cannot
+     * fetch — the bucket blocks public access, so `<img src>` pointed at it
+     * gets a 403. Every read path signs instead.
+     */
+    it('returns signed, readable URLs rather than the stored canonical one', async () => {
+      const token = await loginAs(app, orgAMember, 'password123');
+      const stored = await prisma.seedMedia({
+        incidentId: incident.id,
+        type: 'image',
+      });
+
+      const res = await request(app.getHttpServer())
+        .get('/media')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+
+      const [item] = (res.body as PaginatedBody<GalleryItemBody>).items;
+      expect(item.url).not.toBe(stored.url);
+      expect(item.url).toContain('X-Amz-Signature');
+      expect(storage.downloadCalls).toHaveLength(1);
+    });
+
+    it('signs an attachment disposition for documents but not for images', async () => {
+      // A PDF rendering on the bucket's own origin is the case A9 raised and
+      // F9.5 could not close, having no read path to attach it to. Images
+      // must stay inline or the gallery cannot display them.
+      const token = await loginAs(app, orgAMember, 'password123');
+      await prisma.seedMedia({
+        incidentId: incident.id,
+        type: 'document',
+        name: 'informe.pdf',
+      });
+      await prisma.seedMedia({ incidentId: incident.id, type: 'image' });
+
+      await request(app.getHttpServer())
+        .get('/media')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+
+      const withDisposition = storage.downloadCalls.filter(
+        (c) => c.downloadFilename !== undefined,
+      );
+      expect(withDisposition).toHaveLength(1);
+      expect(withDisposition[0].downloadFilename).toBe('informe.pdf');
+    });
+
+    it('leaves a row whose stored URL is not ours unsigned', async () => {
+      // Same posture as the delete path: a row predating F9.4's validation can
+      // name anything, and signing it would be this service vouching for it.
+      const token = await loginAs(app, orgAMember, 'password123');
+      await prisma.seedMedia({
+        incidentId: incident.id,
+        url: 'https://attacker.test/anything.jpg',
+      });
+
+      const res = await request(app.getHttpServer())
+        .get('/media')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+
+      const [item] = (res.body as PaginatedBody<GalleryItemBody>).items;
+      expect(item.url).toBe('https://attacker.test/anything.jpg');
+      expect(storage.downloadCalls).toHaveLength(0);
     });
 
     it('filters by media type', async () => {

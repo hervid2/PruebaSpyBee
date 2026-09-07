@@ -300,6 +300,19 @@ deploy job:
 
 **Secrets de GitHub requeridos:** `VERCEL_TOKEN`, `NEXT_PUBLIC_MAPBOX_TOKEN`.
 
+### `.github/workflows/backend-deploy.yml` — despliegue del backend (push a `main` que toque `backend/**`)
+
+```
+deploy job:
+  prisma migrate deploy → sam build → sam deploy
+```
+
+El paso de migraciones se añadió en F9.6. Hasta entonces el workflow solo reemplazaba la imagen Lambda, y las migraciones se aplicaban a mano desde una máquina de desarrollo — algo que funciona exactamente hasta que alguien lo olvida. La imagen tampoco puede migrar sola: la etapa de runtime del `Dockerfile` copia `dist`, `node_modules` y `package.json`, así que `prisma/migrations` ni siquiera viaja en ella.
+
+Va **antes** de `sam deploy` a propósito. Las migraciones de este proyecto son aditivas, así que la imagen vieja sigue funcionando contra el esquema nuevo durante los minutos entre ambos pasos; al revés, la imagen nueva hablaría con el esquema viejo, que es justo el fallo que esto evita (el cliente Prisma selecciona todos los campos escalares, y una columna que falta es un P2022 en cualquier consulta sobre `User`). Una migración destructiva necesitaría expand/contract y no se puede meter aquí sin más.
+
+**Secrets adicionales requeridos:** `DATABASE_URL`, `JWT_SECRET`, `FRONTEND_ORIGIN`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, y opcionalmente `ALARM_EMAIL`.
+
 **Branch protection en `main`:** requiere que `quality` y `e2e` estén en verde antes de permitir el merge.
 
 ---

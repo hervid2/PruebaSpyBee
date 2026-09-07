@@ -50,11 +50,14 @@ test.describe('Security headers', () => {
   }) => {
     test.skip(isMobile, 'Not viewport-dependent — covered once.');
 
-    // CVE-2026-44581: on next@14 a malformed inbound CSP request header can
+    // CVE-2026-44581: on next@14 a malformed inbound CSP request header could
     // reach nonce derivation and be reflected into the rendered HTML, which a
-    // shared cache then serves to everyone. middleware.ts overwrites that
-    // header on every matched request, which is the advisory's own documented
-    // workaround — this is the test that keeps it overwritten.
+    // shared cache then serves to everyone. next@16 (F9.5) fixes that at the
+    // source, so this case no longer stands alone — but middleware.ts still
+    // overwrites the header on every matched request, and this is what keeps
+    // it overwritten. The property being tested was never really "next@14 is
+    // patched"; it is "the policy served is the one this app wrote", which
+    // outlives any particular advisory.
     const injected = `script-src 'nonce-x"><script>alert(1)</script>'`;
     const response = await request.get('/login', {
       headers: { 'Content-Security-Policy': injected },

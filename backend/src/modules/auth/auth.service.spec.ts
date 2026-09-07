@@ -3,7 +3,8 @@ import type { ConfigService } from '@nestjs/config';
 import type { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import type { Role } from '@prisma/client';
-import { AuthService } from './auth.service';
+import { AccountLockedException, AuthService } from './auth.service';
+import { ACCOUNT_LOCKOUT_THRESHOLD } from './auth.constants';
 import type { PrismaService } from '../../prisma/prisma.service';
 
 interface UserRow {
@@ -12,6 +13,8 @@ interface UserRow {
   role: Role;
   email: string;
   passwordHash: string;
+  failedLoginAttempts: number;
+  lockedUntil: Date | null;
 }
 
 interface RefreshTokenRow {
@@ -26,6 +29,13 @@ function createPrismaMock() {
   return {
     user: {
       findUnique: jest.fn((): Promise<UserRow | null> => Promise.resolve(null)),
+      update: jest.fn(
+        (args: {
+          where: { id: string };
+          data: Partial<UserRow>;
+        }): Promise<Partial<UserRow>> =>
+          Promise.resolve({ id: args.where.id, ...args.data }),
+      ),
     },
     refreshToken: {
       create: jest.fn(
@@ -34,7 +44,7 @@ function createPrismaMock() {
         }): Promise<RefreshTokenRow> =>
           Promise.resolve({ id: 'rt-new', revokedAt: null, ...args.data }),
       ),
-      findFirst: jest.fn(
+      findUnique: jest.fn(
         (): Promise<(RefreshTokenRow & { user: UserRow }) | null> =>
           Promise.resolve(null),
       ),
@@ -92,6 +102,8 @@ describe('AuthService', () => {
         role: 'member',
         email: 'a@b.com',
         passwordHash,
+        failedLoginAttempts: 0,
+        lockedUntil: null,
       });
       const { service } = createService(prisma);
 
@@ -123,6 +135,8 @@ describe('AuthService', () => {
         role: 'member',
         email: 'a@b.com',
         passwordHash,
+        failedLoginAttempts: 0,
+        lockedUntil: null,
       });
       const { service } = createService(prisma);
 
@@ -208,7 +222,7 @@ describe('AuthService', () => {
 
     it('rejects an already-revoked token', async () => {
       const prisma = createPrismaMock();
-      prisma.refreshToken.findFirst.mockResolvedValueOnce({
+      prisma.refreshToken.findUnique.mockResolvedValueOnce({
         id: 'rt1',
         userId: 'u1',
         tokenHash: 'hash',
@@ -220,6 +234,8 @@ describe('AuthService', () => {
           role: 'member',
           email: 'a@b.com',
           passwordHash: 'x',
+          failedLoginAttempts: 0,
+          lockedUntil: null,
         },
       });
       const { service } = createService(prisma);
@@ -231,7 +247,7 @@ describe('AuthService', () => {
 
     it('rejects an expired token', async () => {
       const prisma = createPrismaMock();
-      prisma.refreshToken.findFirst.mockResolvedValueOnce({
+      prisma.refreshToken.findUnique.mockResolvedValueOnce({
         id: 'rt1',
         userId: 'u1',
         tokenHash: 'hash',
@@ -243,6 +259,8 @@ describe('AuthService', () => {
           role: 'member',
           email: 'a@b.com',
           passwordHash: 'x',
+          failedLoginAttempts: 0,
+          lockedUntil: null,
         },
       });
       const { service } = createService(prisma);
@@ -254,7 +272,7 @@ describe('AuthService', () => {
 
     it('rotates a valid token: revokes the old one and issues a new one', async () => {
       const prisma = createPrismaMock();
-      prisma.refreshToken.findFirst.mockResolvedValueOnce({
+      prisma.refreshToken.findUnique.mockResolvedValueOnce({
         id: 'rt1',
         userId: 'u1',
         tokenHash: 'hash',
@@ -266,6 +284,8 @@ describe('AuthService', () => {
           role: 'member',
           email: 'a@b.com',
           passwordHash: 'x',
+          failedLoginAttempts: 0,
+          lockedUntil: null,
         },
       });
       let updateArgs:
@@ -313,5 +333,111 @@ describe('AuthService', () => {
       expect(updateManyArgs?.where.revokedAt).toBeNull();
       expect(updateManyArgs?.data.revokedAt).toBeInstanceOf(Date);
     });
+  });
+});
+
+/**
+ * F9.5 — account-level brute-force protection. `@nestjs/throttler` counts per
+ * IP inside a single Lambda instance's memory, so an attempt spread across
+ * many addresses (or arriving while several instances are warm) never
+ * converged on any one counter. This one lives on the `User` row.
+ */
+describe('AuthService account lockout', () => {
+  const LOCKABLE_USER = {
+    id: 'u1',
+    orgId: 'org1',
+    role: 'member' as Role,
+    email: 'a@b.com',
+  };
+
+  async function withUser(
+    prisma: ReturnType<typeof createPrismaMock>,
+    overrides: { failedLoginAttempts?: number; lockedUntil?: Date | null } = {},
+  ): Promise<void> {
+    prisma.user.findUnique.mockResolvedValueOnce({
+      ...LOCKABLE_USER,
+      passwordHash: await bcrypt.hash('secret', 4),
+      failedLoginAttempts: overrides.failedLoginAttempts ?? 0,
+      lockedUntil: overrides.lockedUntil ?? null,
+    });
+  }
+
+  it('counts a failed attempt against the account', async () => {
+    const prisma = createPrismaMock();
+    await withUser(prisma, { failedLoginAttempts: 3 });
+    const { service } = createService(prisma);
+
+    expect(await service.validateCredentials('a@b.com', 'wrong')).toBeNull();
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: 'u1' },
+      data: { failedLoginAttempts: 4 },
+    });
+  });
+
+  it('locks the account once the threshold is reached', async () => {
+    const prisma = createPrismaMock();
+    await withUser(prisma, {
+      failedLoginAttempts: ACCOUNT_LOCKOUT_THRESHOLD - 1,
+    });
+    const { service } = createService(prisma);
+
+    expect(await service.validateCredentials('a@b.com', 'wrong')).toBeNull();
+
+    const data = prisma.user.update.mock.calls[0][0].data as {
+      failedLoginAttempts: number;
+      lockedUntil: Date;
+    };
+    // Counter reset with the lock, so the account comes back with a clean
+    // slate rather than re-locking on the first failure after it expires.
+    expect(data.failedLoginAttempts).toBe(0);
+    expect(data.lockedUntil.getTime()).toBeGreaterThan(Date.now());
+  });
+
+  it('refuses a locked account without checking the password at all', async () => {
+    const prisma = createPrismaMock();
+    await withUser(prisma, { lockedUntil: new Date(Date.now() + 60_000) });
+    const { service } = createService(prisma);
+
+    // 429 rather than a null return: the password may well be correct, and
+    // the caller who sees this has already made enough failed attempts to
+    // know the account exists.
+    await expect(
+      service.validateCredentials('a@b.com', 'secret'),
+    ).rejects.toBeInstanceOf(AccountLockedException);
+    expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  it('lets a correct password through once the lock has expired, and clears it', async () => {
+    const prisma = createPrismaMock();
+    await withUser(prisma, {
+      lockedUntil: new Date(Date.now() - 60_000),
+      failedLoginAttempts: 0,
+    });
+    const { service } = createService(prisma);
+
+    expect(await service.validateCredentials('a@b.com', 'secret')).toEqual(
+      LOCKABLE_USER,
+    );
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: 'u1' },
+      data: { failedLoginAttempts: 0, lockedUntil: null },
+    });
+  });
+
+  it('spends bcrypt time on an unknown email too', async () => {
+    // Returning early for an unknown address makes response time answer
+    // "does this account exist?" — the reconnaissance step that turns a
+    // per-account lockout into a list of accounts worth locking.
+    const prisma = createPrismaMock();
+    const { service } = createService(prisma);
+
+    const started = Date.now();
+    expect(
+      await service.validateCredentials('nobody@b.com', 'secret'),
+    ).toBeNull();
+    // A bare `findUnique` miss returns in well under a millisecond; a real
+    // bcrypt comparison cannot. The bound is loose on purpose — this asserts
+    // the comparison happened, not how fast this machine is.
+    expect(Date.now() - started).toBeGreaterThan(5);
   });
 });

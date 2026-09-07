@@ -1,13 +1,21 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'node:crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { hashToken } from '../../common/utils/hash-token.util';
+import { BCRYPT_SALT_ROUNDS } from '../../common/constants/security.constants';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface';
 import type { JwtAccessPayload } from './interfaces/jwt-payload.interface';
 import {
+  ACCOUNT_LOCKOUT_THRESHOLD,
+  ACCOUNT_LOCKOUT_WINDOW_MS,
   DEFAULT_ACCESS_TOKEN_TTL_SECONDS,
   DEFAULT_REFRESH_TOKEN_TTL_DAYS,
 } from './auth.constants';
@@ -16,6 +24,32 @@ export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
 }
+
+/**
+ * 429, not 401 (F9.5). A locked account is not "wrong password" — the
+ * password may well be right — and telling the real user that only their
+ * timing is wrong is the difference between a useful message and a
+ * mystery. It does confirm the address exists, but only to a caller who has
+ * already made ten failed attempts against it and therefore already knows.
+ */
+export class AccountLockedException extends HttpException {
+  constructor() {
+    super(
+      'Too many failed sign-in attempts. Try again in a few minutes.',
+      HttpStatus.TOO_MANY_REQUESTS,
+    );
+  }
+}
+
+/**
+ * A real bcrypt hash of a value nothing can log in with, used only to spend
+ * the same time on an unknown email as on a known one. Generated once at
+ * module load; `bcrypt.compare` against it always fails.
+ */
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync(
+  randomBytes(32).toString('hex'),
+  BCRYPT_SALT_ROUNDS,
+);
 
 @Injectable()
 export class AuthService {
@@ -30,10 +64,35 @@ export class AuthService {
     password: string,
   ): Promise<AuthenticatedUser | null> {
     const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user) return null;
+
+    if (!user) {
+      // Compared against a throwaway hash rather than returning immediately,
+      // so an unknown address costs the same ~200 ms as a known one. Without
+      // this, response time alone answers "does this account exist?" — which
+      // is the reconnaissance step before the attempt the lockout below is
+      // there to stop.
+      await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
+      return null;
+    }
+
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      throw new AccountLockedException();
+    }
 
     const matches = await bcrypt.compare(password, user.passwordHash);
-    if (!matches) return null;
+    if (!matches) {
+      await this.recordFailedLogin(user.id, user.failedLoginAttempts);
+      return null;
+    }
+
+    // Any successful login clears the account, including one that lands after
+    // a lock has expired on its own.
+    if (user.failedLoginAttempts > 0 || user.lockedUntil) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { failedLoginAttempts: 0, lockedUntil: null },
+      });
+    }
 
     return {
       id: user.id,
@@ -41,6 +100,29 @@ export class AuthService {
       role: user.role,
       email: user.email,
     };
+  }
+
+  /**
+   * Counts one failed attempt against the account and locks it at the
+   * threshold (F9.5). The counter resets when the lock is set rather than
+   * when it expires, so the account comes back with a clean slate and the
+   * next `ACCOUNT_LOCKOUT_THRESHOLD` failures are needed to lock it again.
+   */
+  private async recordFailedLogin(
+    userId: string,
+    previousAttempts: number,
+  ): Promise<void> {
+    const attempts = previousAttempts + 1;
+    const locked = attempts >= ACCOUNT_LOCKOUT_THRESHOLD;
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: locked
+        ? {
+            failedLoginAttempts: 0,
+            lockedUntil: new Date(Date.now() + ACCOUNT_LOCKOUT_WINDOW_MS),
+          }
+        : { failedLoginAttempts: attempts },
+    });
   }
 
   async login(user: AuthenticatedUser): Promise<AuthTokens> {
@@ -52,7 +134,11 @@ export class AuthService {
   /** Rotates the refresh token: the presented one is revoked, a new one is issued. */
   async refresh(rawToken: string): Promise<AuthTokens> {
     const tokenHash = hashToken(rawToken);
-    const stored = await this.prisma.refreshToken.findFirst({
+    // `findUnique`, now that `RefreshToken.tokenHash` is `@unique` (F9.5).
+    // The `findFirst` this replaces would have picked an arbitrary row had a
+    // hash ever appeared twice, which is the one thing the reuse detection
+    // below cannot tolerate.
+    const stored = await this.prisma.refreshToken.findUnique({
       where: { tokenHash },
       include: { user: true },
     });

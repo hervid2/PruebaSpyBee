@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   DeleteObjectCommand,
+  HeadObjectCommand,
+  NotFound,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -9,6 +11,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import type {
   PresignedUpload,
   StorageProvider,
+  StoredObject,
 } from './storage-provider.interface';
 import { DEFAULT_PRESIGNED_URL_EXPIRES_IN_SECONDS } from './s3.constants';
 
@@ -29,22 +32,59 @@ export class S3StorageProvider implements StorageProvider {
     // Credentials come from the default provider chain (the Lambda execution
     // role in AWS, a local AWS CLI profile in dev) — never a key/secret read
     // from this app's own config, per best-practices.md §Security.
-    this.client = new S3Client({ region: this.region });
+    this.client = new S3Client({
+      region: this.region,
+      // Without this the SDK computes a CRC32 of the (empty) body at signing
+      // time and hoists `x-amz-checksum-crc32` into the presigned URL's query
+      // string, where S3 reads it back as the expected checksum of whatever
+      // the browser then PUTs — so every real upload is checked against the
+      // digest of nothing and rejected. PutObject does not require a checksum,
+      // so asking for one only "when required" removes the parameter entirely.
+      // See the round-trip case in this provider's spec, which asserts the
+      // presigned URL carries no `x-amz-checksum-*`.
+      requestChecksumCalculation: 'WHEN_REQUIRED',
+    });
   }
 
   async getPresignedUploadUrl(
     key: string,
     contentType: string,
+    contentLength: number,
   ): Promise<PresignedUpload> {
     const command = new PutObjectCommand({
       Bucket: this.bucket,
       Key: key,
       ContentType: contentType,
+      // Signed, and therefore binding: `content-length` lands in
+      // `X-Amz-SignedHeaders`, so S3 rejects a PUT whose body is any other
+      // size (F9.5). `ContentType` cannot be made binding the same way —
+      // `S3RequestPresigner` adds `content-type` to its unsignable set on
+      // purpose, because browsers rewrite the header — which is why the real
+      // type is read back off the stored object instead (`headObject`).
+      ContentLength: contentLength,
     });
     const uploadUrl = await getSignedUrl(this.client, command, {
       expiresIn: this.expiresInSeconds,
     });
     return { uploadUrl, fileUrl: this.publicUrlForKey(key) };
+  }
+
+  async headObject(key: string): Promise<StoredObject | null> {
+    try {
+      const head = await this.client.send(
+        new HeadObjectCommand({ Bucket: this.bucket, Key: key }),
+      );
+      return {
+        contentType: head.ContentType ?? null,
+        size: head.ContentLength ?? 0,
+      };
+    } catch (error) {
+      // A missing object is the ordinary "the client never completed its PUT"
+      // case and is the caller's to report; anything else (denied, throttled,
+      // network) must not be flattened into "not uploaded".
+      if (error instanceof NotFound) return null;
+      throw error;
+    }
   }
 
   async deleteObject(key: string): Promise<void> {

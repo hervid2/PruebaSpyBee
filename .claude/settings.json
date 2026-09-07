@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(npm test 2>&1)",
+      "PowerShell(npm run build 2>&1)",
+      "PowerShell(npx prettier --write \"src/lib/site.ts\" \"src/app/layout.tsx\" \"src/app/robots.ts\" \"src/app/sitemap.ts\" \"src/app/\\(app\\)/layout.tsx\" \"src/app/\\(auth\\)/login/layout.tsx\" \"src/app/\\(auth\\)/invitar/layout.tsx\" \"src/middleware.ts\" \"__tests__/app/seo.test.ts\" \".env.example\" 2>&1)",
+      "Bash(curl -s -o /dev/null http://localhost:3000/login)",
+      "Bash(curl -s -w \"\\\\nHTTP %{http_code}\\\\n\" http://localhost:3000/robots.txt)",
+      "Bash(curl -s -w \"\\\\nHTTP %{http_code}\\\\n\" http://localhost:3000/sitemap.xml)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code} -> %{redirect_url}\\\\n\" http://localhost:3000/dashboard)"
+    ]
+  }
+}

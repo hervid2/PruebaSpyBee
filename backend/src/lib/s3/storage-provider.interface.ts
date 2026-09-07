@@ -5,6 +5,14 @@ export interface PresignedUpload {
   fileUrl: string;
 }
 
+/** What the bucket itself says an object is, once it has actually been written (F9.5). */
+export interface StoredObject {
+  /** The `Content-Type` S3 recorded, or `null` if the object carries none. */
+  contentType: string | null;
+  /** The object's real byte length, as opposed to whatever the client claimed. */
+  size: number;
+}
+
 /**
  * Abstraction over the object storage backend (`best-practices.md §NestJS`,
  * dependency inversion): business services depend on this interface, never
@@ -12,10 +20,29 @@ export interface PresignedUpload {
  * a real AWS account.
  */
 export interface StorageProvider {
+  /**
+   * Signs a single PUT of exactly `contentLength` bytes to `key`.
+   *
+   * The size is part of the signature, not advice (F9.5). Before that, the
+   * only size check in the flow ran against the number the client put in its
+   * own presign request, so a caller could declare 1 KB, receive a URL, and
+   * PUT gigabytes through it — the cap bounded the claim, never the upload.
+   */
   getPresignedUploadUrl(
     key: string,
     contentType: string,
+    contentLength: number,
   ): Promise<PresignedUpload>;
+
+  /**
+   * What is actually at `key`, or `null` if nothing is (F9.5). This is the
+   * call that lets a service record an attachment from the object rather than
+   * from the client's description of it: presigning and recording are two
+   * separate requests, and nothing in between proves the PUT ever happened or
+   * that it wrote what it said it would.
+   */
+  headObject(key: string): Promise<StoredObject | null>;
+
   deleteObject(key: string): Promise<void>;
 
   /**

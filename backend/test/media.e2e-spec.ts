@@ -24,6 +24,8 @@ interface MediaBody {
   id: string;
   incidentId: string;
   type: string;
+  format: string;
+  size: number;
   status: string;
 }
 
@@ -135,6 +137,9 @@ describe('Media (e2e)', () => {
       expect(body.fileUrl).toContain(incident.id);
       expect(storage.presignedCalls).toHaveLength(1);
       expect(storage.presignedCalls[0].contentType).toBe('image/jpeg');
+      // Handed to the signer, so S3 binds the PUT to exactly this many bytes
+      // rather than to whatever the caller claimed here (F9.5).
+      expect(storage.presignedCalls[0].contentLength).toBe(1024 * 1024);
     });
 
     it('rejects an unsupported content type with 400', async () => {
@@ -203,24 +208,86 @@ describe('Media (e2e)', () => {
   });
 
   describe('POST /incidents/:id/media', () => {
+    const ORIGIN = 'https://fake-bucket.s3.fake-region.amazonaws.com';
+
     it('records a media attachment already uploaded to S3', async () => {
       const token = await loginAs(app, orgAMember, 'password123');
+      const key = `incidents/${incident.id}/uuid-leak.jpg`;
+      storage.putObject(key, { contentType: 'image/jpeg', size: 1024 * 1024 });
 
       const res = await request(app.getHttpServer())
         .post(`/incidents/${incident.id}/media`)
         .set('Authorization', `Bearer ${token}`)
-        .send({
-          fileUrl: `https://fake-bucket.s3.fake-region.amazonaws.com/incidents/${incident.id}/uuid-leak.jpg`,
-          name: 'leak.jpg',
-          type: 'image',
-          format: 'jpg',
-          size: 1024 * 1024,
-        })
+        .send({ fileUrl: `${ORIGIN}/${key}`, name: 'leak.jpg' })
         .expect(201);
 
       const body = res.body as MediaBody;
       expect(body.incidentId).toBe(incident.id);
       expect(body.status).toBe('uploaded');
+      // Read off the object, not off the request — the request no longer
+      // carries any of these (F9.5).
+      expect(body.type).toBe('image');
+      expect(body.format).toBe('jpg');
+      expect(body.size).toBe(1024 * 1024);
+    });
+
+    // F9.5. Presigning and recording are separate calls and nothing between
+    // them proved the PUT ever happened, so a row could name a key with no
+    // object behind it — a gallery tile that 404s, and a delete that erases
+    // nothing.
+    it('rejects a URL nothing was ever uploaded to with 400', async () => {
+      const token = await loginAs(app, orgAMember, 'password123');
+
+      await request(app.getHttpServer())
+        .post(`/incidents/${incident.id}/media`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          fileUrl: `${ORIGIN}/incidents/${incident.id}/uuid-never-uploaded.jpg`,
+          name: 'ghost.jpg',
+        })
+        .expect(400);
+
+      expect(prisma.medias).toHaveLength(0);
+    });
+
+    // F9.5. The cap used to be selected by the client-declared `type`, so
+    // calling a 15 MB image a `video` bought it the 200 MB ceiling. The type
+    // now comes from the object, and with it the cap that applies.
+    it('applies the cap for the stored type, not one the client could pick', async () => {
+      const token = await loginAs(app, orgAMember, 'password123');
+      const key = `incidents/${incident.id}/uuid-oversized.jpg`;
+      // Under the 200 MB video ceiling, over the 10 MB image one.
+      storage.putObject(key, {
+        contentType: 'image/jpeg',
+        size: 15 * 1024 * 1024,
+      });
+
+      await request(app.getHttpServer())
+        .post(`/incidents/${incident.id}/media`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ fileUrl: `${ORIGIN}/${key}`, name: 'oversized.jpg' })
+        .expect(400);
+
+      expect(prisma.medias).toHaveLength(0);
+    });
+
+    it('rejects an object whose stored content type is not allowed with 400', async () => {
+      const token = await loginAs(app, orgAMember, 'password123');
+      const key = `incidents/${incident.id}/uuid-payload.jpg`;
+      // A `.jpg` name and an allowed presign do not make the bytes an image:
+      // this is what the object actually turned out to be.
+      storage.putObject(key, {
+        contentType: 'application/x-msdownload',
+        size: 2048,
+      });
+
+      await request(app.getHttpServer())
+        .post(`/incidents/${incident.id}/media`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ fileUrl: `${ORIGIN}/${key}`, name: 'payload.jpg' })
+        .expect(400);
+
+      expect(prisma.medias).toHaveLength(0);
     });
 
     // F9.4. The two-step upload hands `fileUrl` back from the browser, and
@@ -232,21 +299,21 @@ describe('Media (e2e)', () => {
       ['a javascript: URL', 'javascript:alert(document.cookie)'],
       [
         "another incident's key in our own bucket",
-        'https://fake-bucket.s3.fake-region.amazonaws.com/incidents/some-other-incident/victim.jpg',
+        `${ORIGIN}/incidents/some-other-incident/victim.jpg`,
       ],
     ])('rejects a forged fileUrl (%s) with 400', async (_label, fileUrl) => {
       const token = await loginAs(app, orgAMember, 'password123');
+      // Staged so the rejection can only be the origin/prefix rule — the
+      // object genuinely exists at the key that URL names.
+      storage.putObject('incidents/some-other-incident/victim.jpg', {
+        contentType: 'image/jpeg',
+        size: 1024,
+      });
 
       await request(app.getHttpServer())
         .post(`/incidents/${incident.id}/media`)
         .set('Authorization', `Bearer ${token}`)
-        .send({
-          fileUrl,
-          name: 'forged.jpg',
-          type: 'image',
-          format: 'jpg',
-          size: 1024,
-        })
+        .send({ fileUrl, name: 'forged.jpg' })
         .expect(400);
 
       expect(prisma.medias).toHaveLength(0);
@@ -255,38 +322,15 @@ describe('Media (e2e)', () => {
     it('stores the canonical URL, not the client string with its query and fragment', async () => {
       const token = await loginAs(app, orgAMember, 'password123');
       const key = `incidents/${incident.id}/uuid-photo.jpg`;
+      storage.putObject(key, { contentType: 'image/jpeg', size: 1024 });
 
       const res = await request(app.getHttpServer())
         .post(`/incidents/${incident.id}/media`)
         .set('Authorization', `Bearer ${token}`)
-        .send({
-          fileUrl: `https://fake-bucket.s3.fake-region.amazonaws.com/${key}?evil=1#frag`,
-          name: 'photo.jpg',
-          type: 'image',
-          format: 'jpg',
-          size: 1024,
-        })
+        .send({ fileUrl: `${ORIGIN}/${key}?evil=1#frag`, name: 'photo.jpg' })
         .expect(201);
 
-      expect((res.body as { url: string }).url).toBe(
-        `https://fake-bucket.s3.fake-region.amazonaws.com/${key}`,
-      );
-    });
-
-    it('rejects a declared size over the limit for its type with 400', async () => {
-      const token = await loginAs(app, orgAMember, 'password123');
-
-      await request(app.getHttpServer())
-        .post(`/incidents/${incident.id}/media`)
-        .set('Authorization', `Bearer ${token}`)
-        .send({
-          fileUrl: `https://fake-bucket.s3.fake-region.amazonaws.com/incidents/${incident.id}/uuid-huge.jpg`,
-          name: 'huge.jpg',
-          type: 'image',
-          format: 'jpg',
-          size: 50 * 1024 * 1024,
-        })
-        .expect(400);
+      expect((res.body as { url: string }).url).toBe(`${ORIGIN}/${key}`);
     });
   });
 

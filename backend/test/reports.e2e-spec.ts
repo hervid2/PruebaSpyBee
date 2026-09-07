@@ -8,6 +8,7 @@ import type {
   FakeProject,
   FakeIncidentType,
 } from './utils/fake-prisma.service';
+import { DATA_TOKEN_HEADER } from '../src/modules/reports/reports.constants';
 
 interface AccessTokenBody {
   accessToken: string;
@@ -266,6 +267,16 @@ describe('Reports (e2e)', () => {
   });
 
   describe('GET /reports/dashboard-data', () => {
+    /** Mints a fresh data token for `orgAMember` through the real endpoint. */
+    async function generateDataToken(): Promise<string> {
+      const sessionToken = await loginAs(app, orgAMember, 'password123');
+      const created = await request(app.getHttpServer())
+        .post('/reports/data-token')
+        .set('Authorization', `Bearer ${sessionToken}`)
+        .expect(200);
+      return (created.body as DataTokenCreatedBody).token;
+    }
+
     it('rejects a missing or unknown token with 401', async () => {
       await request(app.getHttpServer())
         .get('/reports/dashboard-data')
@@ -273,6 +284,35 @@ describe('Reports (e2e)', () => {
       await request(app.getHttpServer())
         .get('/reports/dashboard-data?token=not-a-real-token')
         .expect(401);
+      await request(app.getHttpServer())
+        .get('/reports/dashboard-data')
+        .set(DATA_TOKEN_HEADER, 'not-a-real-token')
+        .expect(401);
+    });
+
+    /**
+     * F9.5. `?token=` stays — the endpoint exists so a URL can be pasted into
+     * Power BI or Looker Studio, and some of those paths accept nothing else —
+     * but a credential in a URL reaches API Gateway access logs, browser
+     * history and `Referer` headers, none of which a request header touches.
+     * A caller that can set one now has somewhere better to put it.
+     */
+    it('accepts the token in the X-Data-Token header instead of the query string', async () => {
+      const dataToken = await generateDataToken();
+
+      await request(app.getHttpServer())
+        .get('/reports/dashboard-data')
+        .set(DATA_TOKEN_HEADER, dataToken)
+        .expect(200);
+    });
+
+    it('prefers the header when both are sent, so a stale URL cannot downgrade the call', async () => {
+      const dataToken = await generateDataToken();
+
+      await request(app.getHttpServer())
+        .get('/reports/dashboard-data?token=not-a-real-token')
+        .set(DATA_TOKEN_HEADER, dataToken)
+        .expect(200);
     });
 
     it("aggregates only the token owner org's incidents, ignoring other orgs", async () => {

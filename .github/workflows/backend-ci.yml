@@ -21,6 +21,10 @@ env:
   # though these jobs never touch a real database. Never the real secret,
   # which only ever lives as a SAM NoEcho parameter (F6.2).
   JWT_ACCESS_SECRET: ci-test-only-secret-do-not-use-in-prod
+  # Kept equal to ci.yml's NODE_VERSION (F9.5). Two workflows cannot share one
+  # variable without a repository-level setting, so this is a duplicate on
+  # purpose — change both together.
+  NODE_VERSION: '22'
 
 jobs:
   quality:
@@ -29,7 +33,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: backend/package-lock.json
       - run: npm ci

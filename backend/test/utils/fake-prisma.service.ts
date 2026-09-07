@@ -30,6 +30,9 @@ export interface FakeUser {
   role: Role;
   avatarUrl: string | null;
   createdAt: Date;
+  // Account lockout (F9.5) — see `AuthService.validateCredentials`.
+  failedLoginAttempts: number;
+  lockedUntil: Date | null;
 }
 
 interface FakeRefreshToken {
@@ -314,6 +317,8 @@ export class FakePrismaService {
     orgId: string;
     role: Role;
     name?: string;
+    failedLoginAttempts?: number;
+    lockedUntil?: Date | null;
   }): Promise<FakeUser> {
     const user: FakeUser = {
       id: this.nextId(),
@@ -325,6 +330,8 @@ export class FakePrismaService {
       role: params.role,
       avatarUrl: null,
       createdAt: new Date(),
+      failedLoginAttempts: params.failedLoginAttempts ?? 0,
+      lockedUntil: params.lockedUntil ?? null,
     };
     this.users.push(user);
     return user;
@@ -375,6 +382,8 @@ export class FakePrismaService {
         id: this.nextId(),
         avatarUrl: null,
         createdAt: new Date(),
+        failedLoginAttempts: 0,
+        lockedUntil: null,
         ...data,
       };
       this.users.push(user);
@@ -397,7 +406,9 @@ export class FakePrismaService {
       this.refreshTokens.push(row);
       return Promise.resolve(row);
     },
-    findFirst: ({
+    // `findUnique`, matching the service after `RefreshToken.tokenHash`
+    // became `@unique` (F9.5).
+    findUnique: ({
       where,
     }: {
       where: { tokenHash: string };
@@ -1154,6 +1165,28 @@ export class FakePrismaService {
     findUnique: ({ where }: { where: { id: string } }) => {
       const incident = this.incidents.find((i) => i.id === where.id);
       return Promise.resolve(incident ? this.hydrateIncident(incident) : null);
+    },
+    /**
+     * Only the shape `nextSequenceId` uses (F9.5): newest first, ties broken
+     * by `sequenceId`, projected down to that one column. Sorting here mirrors
+     * the real `orderBy: [{ createdAt: 'desc' }, { sequenceId: 'desc' }]`
+     * rather than accepting arbitrary orderings this store cannot honour.
+     */
+    findFirst: ({
+      where,
+    }: {
+      where?: FakeIncidentWhere;
+      orderBy?: unknown;
+      select?: unknown;
+    }): Promise<{ sequenceId: string } | null> => {
+      const [newest] = this.incidents
+        .filter((i) => this.matchesIncidentWhere(i, where))
+        .sort(
+          (a, b) =>
+            b.createdAt.getTime() - a.createdAt.getTime() ||
+            b.sequenceId.localeCompare(a.sequenceId),
+        );
+      return Promise.resolve(newest ? { sequenceId: newest.sequenceId } : null);
     },
     create: ({
       data,

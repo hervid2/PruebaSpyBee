@@ -21,16 +21,18 @@ Root of multi-tenancy — everything else hangs off an organization.
 
 ## User **[new]**
 
-| Field          | Type                                | Notes                                   |
-| -------------- | ----------------------------------- | --------------------------------------- |
-| `id`           | uuid                                | PK                                      |
-| `orgId`        | uuid                                | FK → `Organization`                     |
-| `name`         | string                              |                                         |
-| `email`        | string                              | unique                                  |
-| `passwordHash` | string                              | bcrypt — never a plaintext password     |
-| `role`         | enum(`member`,`admin`,`superadmin`) | `superadmin` is cross-org (§1.6 Should) |
-| `avatarUrl`    | string?                             |                                         |
-| `createdAt`    | datetime                            |                                         |
+| Field                 | Type                                | Notes                                                                                   |
+| --------------------- | ----------------------------------- | --------------------------------------------------------------------------------------- |
+| `id`                  | uuid                                | PK                                                                                      |
+| `orgId`               | uuid                                | FK → `Organization`                                                                     |
+| `name`                | string                              |                                                                                         |
+| `email`               | string                              | unique                                                                                  |
+| `passwordHash`        | string                              | bcrypt — never a plaintext password                                                     |
+| `role`                | enum(`member`,`admin`,`superadmin`) | `superadmin` is cross-org (§1.6 Should)                                                 |
+| `avatarUrl`           | string?                             |                                                                                         |
+| `createdAt`           | datetime                            |                                                                                         |
+| `failedLoginAttempts` | int                                 | account-level brute-force counter (F9.5); reset on any successful login                 |
+| `lockedUntil`         | datetime?                           | set when the counter reaches the threshold; `/auth/login` answers `429` until it passes |
 
 `UserRef` (the lightweight shape already used in `incident.model.ts` for `owner`/`assignees`/`observers`: `{ id, name, email, avatarUrl? }`) is a projection of `User`, not its own entity — the backend assembles it when serializing, it isn't persisted separately.
 
@@ -139,10 +141,12 @@ Project-level attachment (roadmap 8.11, `requirements.md §1.2` Could) — the f
 | ----------- | --------- | ---------------------------------------------------------------------- |
 | `id`        | uuid      | PK                                                                     |
 | `userId`    | uuid      | FK → `User`                                                            |
-| `tokenHash` | string    | the token is never stored in clear text                                |
+| `tokenHash` | string    | unique (F9.5) — the token is never stored in clear text                |
 | `expiresAt` | datetime  |                                                                        |
 | `revokedAt` | datetime? | set on logout — the row isn't deleted, it stays as proof of revocation |
 | `createdAt` | datetime  |                                                                        |
+
+`tokenHash` is `@unique`, as it already was on `Invitation` and `ExportToken`. That is not only consistency: F9.4's refresh-token reuse detection assumes one raw token names exactly one row, and until F9.5 nothing in the database held that up — `AuthService.refresh` had to `findFirst` and would have picked one row out of any duplicates.
 
 ---
 

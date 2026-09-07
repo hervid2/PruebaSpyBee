@@ -51,12 +51,16 @@ const structuredData = {
   inLanguage: ['es', 'en'],
 };
 
-export default function LoginLayout({ children }: { children: React.ReactNode }) {
+export default async function LoginLayout({ children }: { children: React.ReactNode }) {
   // The CSP issued by middleware.ts (F9.4) admits inline scripts only by
   // nonce, and Next stamps its own tags but not this hand-written one — so
   // without this the structured data would be blocked and `/login` would drop
   // out of the rich results F9.2 set it up for.
-  const nonce = headers().get('x-nonce') ?? undefined;
+  //
+  // `await` since next@16 (F9.5): `headers()` returns a promise now, which is
+  // what makes this layout an async Server Component. Nothing else about the
+  // route changes — it was already dynamic precisely because it reads a header.
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
 
   return (
     <>

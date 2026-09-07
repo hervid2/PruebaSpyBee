@@ -5,6 +5,7 @@ import type { App } from 'supertest/types';
 import { createTestApp } from './utils/test-app';
 import type { FakePrismaService, FakeUser } from './utils/fake-prisma.service';
 import {
+  ACCOUNT_LOCKOUT_THRESHOLD,
   APP_THROTTLE_LIMIT,
   LOGIN_THROTTLE_LIMIT,
   REFRESH_TOKEN_COOKIE,
@@ -81,6 +82,66 @@ describe('Auth hardening (e2e)', () => {
 
     const throttled = await attempt();
     expect(throttled.status).toBe(429);
+  });
+
+  /**
+   * F9.5 — account-level brute-force protection. The throttle above is per IP
+   * and per Lambda instance, so it bounds one caller's rate and nothing else:
+   * an attempt spread across many addresses converging on a single account
+   * met no limit at all. These count on the `User` row, which is the one
+   * counter in this stack that every instance shares.
+   */
+  describe('account lockout', () => {
+    const login = (email: string, password: string) =>
+      request(app.getHttpServer())
+        .post('/auth/login')
+        .send({ email, password });
+
+    it('locks the account on the failure that reaches the threshold', async () => {
+      const nearlyLocked = await prisma.seedUser({
+        email: 'nearly@acme.test',
+        password: 'correct-horse',
+        orgId: 'org-acme',
+        role: 'member',
+        failedLoginAttempts: ACCOUNT_LOCKOUT_THRESHOLD - 1,
+      });
+
+      // The failure that trips it still reads as an ordinary 401 — the lock
+      // is what the *next* attempt meets.
+      await login(nearlyLocked.email, 'wrong-password').expect(401);
+
+      // 429 even though this password is the correct one: that is the point,
+      // and it is why the lock cannot be probed as an oracle for the password.
+      await login(nearlyLocked.email, 'correct-horse').expect(429);
+    });
+
+    it('lets the right password through again once the window has passed', async () => {
+      const expired = await prisma.seedUser({
+        email: 'expired-lock@acme.test',
+        password: 'correct-horse',
+        orgId: 'org-acme',
+        role: 'member',
+        lockedUntil: new Date(Date.now() - 60_000),
+      });
+
+      await login(expired.email, 'correct-horse').expect(200);
+    });
+
+    it('does not lock other accounts, or sessions already signed in', async () => {
+      const locked = await prisma.seedUser({
+        email: 'locked@acme.test',
+        password: 'correct-horse',
+        orgId: 'org-acme',
+        role: 'member',
+        lockedUntil: new Date(Date.now() + 60_000),
+      });
+
+      await login(locked.email, 'correct-horse').expect(429);
+      // A lock an attacker can trigger against a known address would
+      // otherwise be a denial of service against that user and everyone
+      // near them.
+      await login(member.email, 'correct-horse').expect(200);
+    });
   });
 
   // F9.4 — refresh-token reuse detection. Rotation alone leaves a stolen

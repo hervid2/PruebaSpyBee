@@ -41,7 +41,10 @@ const INCIDENT_INCLUDE = {
   tags: { include: { tag: true } },
 } as const;
 
-const MAX_SEQUENCE_ID_ATTEMPTS = 3;
+// Each retry re-reads the high-water mark, so a loser in a concurrent create
+// converges after one round; the extra headroom is for a burst of several at
+// once. Exhausting them is a 409, not the raw P2002 (see `create`).
+const MAX_SEQUENCE_ID_ATTEMPTS = 5;
 
 // Caps `GET /incidents/export.csv` — well above this project's ~200-incident
 // mock scale, just a guard against an unbounded response body.
@@ -272,13 +275,19 @@ export class IncidentsService {
         const isSequenceCollision =
           error instanceof Prisma.PrismaClientKnownRequestError &&
           error.code === 'P2002';
-        if (!isSequenceCollision || attempt === MAX_SEQUENCE_ID_ATTEMPTS) {
-          throw error;
+        if (!isSequenceCollision) throw error;
+        if (attempt === MAX_SEQUENCE_ID_ATTEMPTS) {
+          // A collision that outlives every retry is a conflict the caller
+          // can act on by trying again — not the raw P2002, which surfaced as
+          // a 500 and would page whoever is on the F9.3 app-5xx alarm.
+          throw new ConflictException(
+            'Could not allocate an incident number, please retry',
+          );
         }
       }
     }
     // Unreachable: the loop above always returns or throws.
-    throw new ConflictException('Could not allocate a sequence id');
+    throw new ConflictException('Could not allocate an incident number');
   }
 
   async update(
@@ -473,9 +482,35 @@ export class IncidentsService {
     return incident;
   }
 
+  /**
+   * The next human-facing incident number for an organization (F9.5).
+   *
+   * Derived from the highest number already handed out, not from `count()`.
+   * Counting is only correct while nothing is ever removed: one hard-deleted
+   * row and the count falls back onto a number that is still in use — and
+   * because the candidate is a pure function of the count, every retry would
+   * recompute that same taken value and the create would fail permanently
+   * rather than converge. A high-water mark is monotonic, and the gaps a
+   * deletion leaves are harmless.
+   *
+   * `@@unique([orgId, sequenceId])` remains what actually guarantees no two
+   * incidents share a number. Two concurrent creates do both read the same
+   * mark and try the same value; the database rejects the loser, and its
+   * retry reads a mark the winner has since moved.
+   */
   private async nextSequenceId(orgId: string): Promise<string> {
-    const count = await this.prisma.incident.count({ where: { orgId } });
-    return String(count + 1).padStart(INCIDENT_SEQUENCE_ID_LENGTH, '0');
+    const latest = await this.prisma.incident.findFirst({
+      where: { orgId },
+      // Newest first, because numbers are handed out in creation order.
+      // Ordering by `sequenceId` itself would be a *string* comparison, which
+      // stops agreeing with numeric order at five digits ('10000' < '9999').
+      // The secondary key only breaks ties inside a single millisecond.
+      orderBy: [{ createdAt: 'desc' }, { sequenceId: 'desc' }],
+      select: { sequenceId: true },
+    });
+    const parsed = Number.parseInt(latest?.sequenceId ?? '', 10);
+    const highest = Number.isFinite(parsed) ? parsed : 0;
+    return String(highest + 1).padStart(INCIDENT_SEQUENCE_ID_LENGTH, '0');
   }
 
   private async assertProjectInOrg(

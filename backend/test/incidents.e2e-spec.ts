@@ -127,6 +127,82 @@ describe('Incidents (e2e)', () => {
       expect((res.body as IncidentBody).sequenceId).toBe('0001');
     });
 
+    /**
+     * F9.5. Numbers used to be derived from `count()`, which only holds while
+     * nothing is ever removed — one missing row and the count points back at a
+     * number still in use, and since the candidate was a pure function of the
+     * count, every retry recomputed that same taken value. The high-water mark
+     * has no such failure mode; `@@unique([orgId, sequenceId])` is still what
+     * makes duplicates impossible rather than merely unlikely.
+     */
+    it('numbers incidents from the highest already issued, not from how many exist', async () => {
+      const token = await loginAs(app, orgAMember, 'password123');
+      // Stands in for whatever leaves a gap — a hard delete, a restore, a
+      // number issued out of band. `count()` would answer '0002' here, which
+      // is taken.
+      await prisma.seedIncident({
+        orgId: 'org-a',
+        projectId: projectA.id,
+        typeId: plumbingType.id,
+        ownerId: orgAMember.id,
+        title: 'Pre-existing incident',
+        priority: 'low',
+        sequenceId: '0009',
+      });
+
+      const res = await request(app.getHttpServer())
+        .post('/incidents')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          projectId: projectA.id,
+          typeId: plumbingType.id,
+          title: 'Next in sequence',
+          description: 'Follows the high-water mark',
+          priority: 'low',
+        })
+        .expect(201);
+
+      expect((res.body as IncidentBody).sequenceId).toBe('0010');
+    });
+
+    it('numbers each organization independently', async () => {
+      const token = await loginAs(app, orgAMember, 'password123');
+      const otherOwner = await prisma.seedUser({
+        email: 'seq-owner@org-b.test',
+        password: 'password123',
+        orgId: 'org-b',
+        role: 'member',
+        name: 'Org B Owner',
+      });
+      const otherProject = await prisma.seedProject({
+        orgId: 'org-b',
+        name: 'Los Almendros',
+      });
+      await prisma.seedIncident({
+        orgId: 'org-b',
+        projectId: otherProject.id,
+        typeId: plumbingType.id,
+        ownerId: otherOwner.id,
+        title: 'Other org incident',
+        priority: 'low',
+        sequenceId: '0042',
+      });
+
+      const res = await request(app.getHttpServer())
+        .post('/incidents')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          projectId: projectA.id,
+          typeId: plumbingType.id,
+          title: 'First for org A',
+          description: 'Org B being at 0042 must not shift this',
+          priority: 'low',
+        })
+        .expect(201);
+
+      expect((res.body as IncidentBody).sequenceId).toBe('0001');
+    });
+
     it('rejects a projectId from another organization with 400', async () => {
       const token = await loginAs(app, orgAMember, 'password123');
 

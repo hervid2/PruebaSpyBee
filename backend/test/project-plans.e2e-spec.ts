@@ -93,6 +93,8 @@ describe('Project plans (e2e)', () => {
       expect(body.fileUrl).toContain(projectA.id);
       expect(storage.presignedCalls).toHaveLength(1);
       expect(storage.presignedCalls[0].contentType).toBe('image/png');
+      // Signed, so the 20 MB cap binds the PUT and not just the claim (F9.5).
+      expect(storage.presignedCalls[0].contentLength).toBe(1024 * 1024);
     });
 
     it('accepts application/pdf', async () => {
@@ -159,24 +161,25 @@ describe('Project plans (e2e)', () => {
   });
 
   describe('POST /projects/:id/plans', () => {
+    const ORIGIN = 'https://fake-bucket.s3.fake-region.amazonaws.com';
+
     it('records a plan already uploaded to S3', async () => {
       const token = await loginAs(app, orgAAdmin, 'password123');
+      const key = `projects/${projectA.id}/plans/floor-1.png`;
+      storage.putObject(key, { contentType: 'image/png', size: 1024 * 1024 });
 
       const res = await request(app.getHttpServer())
         .post(`/projects/${projectA.id}/plans`)
         .set('Authorization', `Bearer ${token}`)
-        .send({
-          fileUrl: `https://fake-bucket.s3.fake-region.amazonaws.com/projects/${projectA.id}/plans/floor-1.png`,
-          name: 'floor-1.png',
-          type: 'image',
-          format: 'png',
-          size: 1024 * 1024,
-        })
+        .send({ fileUrl: `${ORIGIN}/${key}`, name: 'floor-1.png' })
         .expect(201);
 
       const body = res.body as ProjectPlanBody;
       expect(body.projectId).toBe(projectA.id);
+      // From the object, not the request (F9.5).
       expect(body.type).toBe('image');
+      expect(body.format).toBe('png');
+      expect(body.size).toBe(1024 * 1024);
     });
 
     // F9.4, same boundary as `POST /incidents/:id/media`: `fileUrl` comes back
@@ -186,20 +189,31 @@ describe('Project plans (e2e)', () => {
       ['a host the attacker controls', 'https://attacker.test/floor-1.png'],
       [
         "another project's key in our own bucket",
-        'https://fake-bucket.s3.fake-region.amazonaws.com/projects/other-project/plans/floor-1.png',
+        `${ORIGIN}/projects/other-project/plans/floor-1.png`,
       ],
     ])('rejects a forged fileUrl (%s) with 400', async (_label, fileUrl) => {
+      const token = await loginAs(app, orgAAdmin, 'password123');
+      storage.putObject('projects/other-project/plans/floor-1.png', {
+        contentType: 'image/png',
+        size: 1024,
+      });
+
+      await request(app.getHttpServer())
+        .post(`/projects/${projectA.id}/plans`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ fileUrl, name: 'floor-1.png' })
+        .expect(400);
+    });
+
+    it('rejects a URL nothing was ever uploaded to with 400', async () => {
       const token = await loginAs(app, orgAAdmin, 'password123');
 
       await request(app.getHttpServer())
         .post(`/projects/${projectA.id}/plans`)
         .set('Authorization', `Bearer ${token}`)
         .send({
-          fileUrl,
-          name: 'floor-1.png',
-          type: 'image',
-          format: 'png',
-          size: 1024,
+          fileUrl: `${ORIGIN}/projects/${projectA.id}/plans/never-uploaded.png`,
+          name: 'ghost.png',
         })
         .expect(400);
     });
@@ -210,31 +224,21 @@ describe('Project plans (e2e)', () => {
       await request(app.getHttpServer())
         .post(`/projects/${projectA.id}/plans`)
         .set('Authorization', `Bearer ${token}`)
-        .send({
-          fileUrl:
-            'https://fake-bucket.s3.fake-region.amazonaws.com/x/floor-1.png',
-          name: 'floor-1.png',
-          type: 'image',
-          format: 'png',
-          size: 1024,
-        })
+        .send({ fileUrl: `${ORIGIN}/x/floor-1.png`, name: 'floor-1.png' })
         .expect(403);
     });
 
-    it('rejects an unsupported declared type with 400', async () => {
+    it('rejects an object whose stored type is not allowed for a plan with 400', async () => {
       const token = await loginAs(app, orgAAdmin, 'password123');
+      const key = `projects/${projectA.id}/plans/clip.mp4`;
+      // Video is a valid media type but never a project plan
+      // (requirements.md §1.2 Could: image/PDF only).
+      storage.putObject(key, { contentType: 'video/mp4', size: 1024 });
 
       await request(app.getHttpServer())
         .post(`/projects/${projectA.id}/plans`)
         .set('Authorization', `Bearer ${token}`)
-        .send({
-          fileUrl:
-            'https://fake-bucket.s3.fake-region.amazonaws.com/x/clip.mp4',
-          name: 'clip.mp4',
-          type: 'video',
-          format: 'mp4',
-          size: 1024,
-        })
+        .send({ fileUrl: `${ORIGIN}/${key}`, name: 'clip.mp4' })
         .expect(400);
     });
   });

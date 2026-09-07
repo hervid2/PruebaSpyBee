@@ -1,6 +1,7 @@
 import type {
   PresignedUpload,
   StorageProvider,
+  StoredObject,
 } from '../../src/lib/s3/storage-provider.interface';
 
 const FAKE_ORIGIN = 'https://fake-bucket.s3.fake-region.amazonaws.com';
@@ -10,16 +11,30 @@ const FAKE_ORIGIN = 'https://fake-bucket.s3.fake-region.amazonaws.com';
  * `resolveOwnKey` deliberately reimplements the real origin/prefix rule
  * rather than accepting everything: the specs that assert a forged `fileUrl`
  * is rejected (F9.4) would pass vacuously against a permissive double.
+ *
+ * `headObject` is backed by a map a spec fills with `putObject` (F9.5). The
+ * browser's direct PUT is the one step of the upload no e2e test performs, so
+ * staging it explicitly is what keeps "the object is there and is an image"
+ * distinguishable from "the client presigned a URL and never uploaded" — the
+ * case `MediaService.create` now rejects. Presigning deliberately does *not*
+ * stage anything, so a spec that forgets to say what was uploaded fails
+ * loudly instead of silently testing the happy path.
  */
 export class FakeStorageProvider implements StorageProvider {
-  readonly presignedCalls: { key: string; contentType: string }[] = [];
+  readonly presignedCalls: {
+    key: string;
+    contentType: string;
+    contentLength: number;
+  }[] = [];
   readonly deletedKeys: string[] = [];
+  private readonly objects = new Map<string, StoredObject>();
 
   getPresignedUploadUrl(
     key: string,
     contentType: string,
+    contentLength: number,
   ): Promise<PresignedUpload> {
-    this.presignedCalls.push({ key, contentType });
+    this.presignedCalls.push({ key, contentType, contentLength });
     const fileUrl = this.publicUrlForKey(key);
     return Promise.resolve({
       uploadUrl: `${fileUrl}?X-Amz-Signature=fake`,
@@ -27,8 +42,18 @@ export class FakeStorageProvider implements StorageProvider {
     });
   }
 
+  /** Stands in for the browser's direct PUT: after this, `headObject(key)` sees an object. */
+  putObject(key: string, object: StoredObject): void {
+    this.objects.set(key, object);
+  }
+
+  headObject(key: string): Promise<StoredObject | null> {
+    return Promise.resolve(this.objects.get(key) ?? null);
+  }
+
   deleteObject(key: string): Promise<void> {
     this.deletedKeys.push(key);
+    this.objects.delete(key);
     return Promise.resolve();
   }
 

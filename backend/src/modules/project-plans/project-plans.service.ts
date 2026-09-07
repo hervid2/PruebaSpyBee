@@ -20,6 +20,7 @@ import {
 } from './dto/project-plan-response.dto';
 import {
   MAX_PROJECT_PLAN_SIZE_BYTES,
+  projectPlanFormatFromContentType,
   projectPlanTypeFromContentType,
 } from './project-plans.constants';
 
@@ -49,7 +50,8 @@ export class ProjectPlansService {
     }
 
     const key = `${planKeyPrefix(projectId)}${randomUUID()}-${sanitizeFilename(dto.filename)}`;
-    return this.storage.getPresignedUploadUrl(key, dto.contentType);
+    // Signed size, so the cap binds the upload and not just the claim (F9.5).
+    return this.storage.getPresignedUploadUrl(key, dto.contentType, dto.size);
   }
 
   async create(
@@ -58,12 +60,6 @@ export class ProjectPlansService {
     user: AuthenticatedUser,
   ): Promise<ProjectPlanResponseDto> {
     await this.assertProjectInOrg(projectId, user);
-
-    if (dto.size > MAX_PROJECT_PLAN_SIZE_BYTES) {
-      throw new BadRequestException(
-        'File exceeds the maximum size allowed for project plans',
-      );
-    }
 
     // Same reasoning as `MediaService.create` (F9.4): `fileUrl` is client
     // text, and a plan's URL is rendered as a link/preview and used to pick
@@ -78,13 +74,33 @@ export class ProjectPlansService {
       );
     }
 
+    // And, as in `MediaService.create` (F9.5), the row is written from the
+    // object rather than from the request that claims to describe it.
+    const object = await this.storage.headObject(key);
+    if (!object) {
+      throw new BadRequestException('No file has been uploaded to that URL');
+    }
+
+    const contentType = object.contentType ?? '';
+    const planType = projectPlanTypeFromContentType(contentType);
+    if (!planType) {
+      throw new BadRequestException(
+        `Unsupported content type: ${contentType || 'none'}`,
+      );
+    }
+    if (object.size > MAX_PROJECT_PLAN_SIZE_BYTES) {
+      throw new BadRequestException(
+        'File exceeds the maximum size allowed for project plans',
+      );
+    }
+
     const plan = await this.prisma.projectPlan.create({
       data: {
         projectId,
         name: dto.name,
-        type: dto.type,
-        format: dto.format,
-        size: dto.size,
+        type: planType,
+        format: projectPlanFormatFromContentType(contentType),
+        size: object.size,
         url: this.storage.publicUrlForKey(key),
       },
     });

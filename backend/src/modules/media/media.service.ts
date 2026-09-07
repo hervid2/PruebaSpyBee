@@ -29,6 +29,7 @@ import {
 } from './dto/media-gallery-item.dto';
 import {
   MAX_MEDIA_SIZE_BYTES,
+  mediaFormatFromContentType,
   mediaTypeFromContentType,
 } from './media.constants';
 
@@ -58,7 +59,9 @@ export class MediaService {
     }
 
     const key = `${incidentKeyPrefix(dto.incidentId)}${randomUUID()}-${sanitizeFilename(dto.filename)}`;
-    return this.storage.getPresignedUploadUrl(key, dto.contentType);
+    // `dto.size` stops being a claim here and becomes part of the signature:
+    // S3 refuses a PUT of any other length (F9.5).
+    return this.storage.getPresignedUploadUrl(key, dto.contentType, dto.size);
   }
 
   async create(
@@ -67,12 +70,6 @@ export class MediaService {
     user: AuthenticatedUser,
   ): Promise<MediaResponseDto> {
     await this.assertIncidentInOrg(incidentId, user);
-
-    if (dto.size > MAX_MEDIA_SIZE_BYTES[dto.type]) {
-      throw new BadRequestException(
-        `File exceeds the maximum size allowed for ${dto.type}`,
-      );
-    }
 
     // `fileUrl` is the one field in this flow that arrives from the browser
     // rather than from a value the server itself just issued, so it is
@@ -89,13 +86,38 @@ export class MediaService {
       );
     }
 
+    // Everything below describes the object, not the request (F9.5).
+    // Presigning and recording are two separate calls, and until this HEAD
+    // nothing in between established that the PUT ever happened: a row could
+    // point at a key with no object behind it, carrying a type, format and
+    // size the client simply asserted. The type mattered most — the cap was
+    // picked from `dto.type`, so declaring `video` bought the 200 MB ceiling
+    // for an image.
+    const object = await this.storage.headObject(key);
+    if (!object) {
+      throw new BadRequestException('No file has been uploaded to that URL');
+    }
+
+    const contentType = object.contentType ?? '';
+    const mediaType = mediaTypeFromContentType(contentType);
+    if (!mediaType) {
+      throw new BadRequestException(
+        `Unsupported content type: ${contentType || 'none'}`,
+      );
+    }
+    if (object.size > MAX_MEDIA_SIZE_BYTES[mediaType]) {
+      throw new BadRequestException(
+        `File exceeds the maximum size allowed for ${mediaType}`,
+      );
+    }
+
     const media = await this.prisma.media.create({
       data: {
         incidentId,
         name: dto.name,
-        type: dto.type,
-        format: dto.format,
-        size: dto.size,
+        type: mediaType,
+        format: mediaFormatFromContentType(contentType),
+        size: object.size,
         status: 'uploaded',
         // The canonical form of the validated key, never the client's own
         // string — a matching origin and prefix still leave the query and

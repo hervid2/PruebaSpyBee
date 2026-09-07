@@ -88,6 +88,18 @@ Globals:
 Resources:
   # Media attachments (F5.5). Access is always via presigned URLs from the
   # backend, never a public bucket policy — see aws-deploy-guide.md §8.
+  #
+  # F9.5 considered signing `ContentDisposition: attachment` so a PDF
+  # downloads instead of rendering on the bucket's own origin, and did not do
+  # it — because there is no read path to attach it to. Nothing signs a GET:
+  # the gallery and `/documentos` point `<img src>`/`<a href>` straight at
+  # `https://<bucket>.s3.<region>.amazonaws.com/<key>`, which the public
+  # access block above answers with 403. The demo does not show this because
+  # its seeded media points at picsum.photos. Whoever adds the presigned GET
+  # should sign `ResponseContentDisposition=attachment` on it (a response
+  # override the server controls, unlike a PUT-time header the browser has to
+  # send back verbatim) — at which point the concern is closed properly rather
+  # than stored as metadata nothing reads. Tracked in roadmap.md F9.5.
   MediaBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -96,6 +108,47 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+      # Encryption at rest (F9.5). SSE-S3 rather than SSE-KMS: AES-256 with
+      # S3-managed keys is free and needs no key policy, while KMS bills per
+      # request and would put a second permission surface between the Lambda
+      # and every object. `BucketKeyEnabled` is the KMS cost optimisation and
+      # is inert here — set so switching to SSE-KMS later is a one-line change
+      # that does not silently multiply the request bill.
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - BucketKeyEnabled: true
+            ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      # Versioning (F9.5) is what makes `DELETE /media/:id` recoverable: on a
+      # versioned bucket `DeleteObject` writes a delete marker rather than
+      # destroying the bytes, so an attachment removed by mistake — or by
+      # somebody who should not have — is still there. The Lambda's
+      # `S3CrudPolicy` does not grant `s3:DeleteObjectVersion`, so nothing the
+      # app can do reaches past the marker.
+      VersioningConfiguration:
+        Status: Enabled
+      # ...which is also why versioning needs a lifecycle rule next to it
+      # (F9.5): without one, every delete and every overwrite accumulates
+      # forever and the bucket only ever grows.
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireNoncurrentVersions
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 30
+          # A delete marker whose last non-current version has expired is a
+          # tombstone pointing at nothing; left behind it still costs a
+          # listing entry.
+          - Id: RemoveOrphanedDeleteMarkers
+            Status: Enabled
+            ExpirationInDays: 1
+            ExpiredObjectDeleteMarker: true
+          # An upload the browser starts and abandons (tab closed, connection
+          # dropped) leaves parts that are billed and are invisible to every
+          # console listing.
+          - Id: AbortIncompleteUploads
+            Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
       CorsConfiguration:
         CorsRules:
           - AllowedMethods: [PUT]

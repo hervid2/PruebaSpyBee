@@ -38,6 +38,18 @@ Parameters:
       Allowed CORS origin for both the API (backend CORS/helmet setup) and
       the MediaBucket's PUT CORS rule — the deployed Vercel URL in
       production (F6.3). Never '*'.
+  EnableApiDocs:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: >
+      Serve Swagger UI and the OpenAPI schema at /api/docs (F9.4). Off here by
+      default: the deployed stack runs with NODE_ENV=production, where
+      publishing the full route inventory unauthenticated is free
+      reconnaissance. Turning it on is a real choice with a real cost — the
+      API's Content-Security-Policy has to come off for Swagger's inline
+      bootstrap script to run (see bootstrap.ts) — which is why it is a
+      parameter rather than something a deploy flips by accident.
   MaxConcurrency:
     Type: Number
     Default: 5
@@ -106,6 +118,7 @@ Resources:
           S3_BUCKET_NAME: !Ref MediaBucket
           S3_PRESIGNED_URL_EXPIRES_IN_SECONDS: !Ref S3PresignedUrlExpiresInSeconds
           FRONTEND_ORIGIN: !Ref FrontendOrigin
+          ENABLE_API_DOCS: !Ref EnableApiDocs
           NODE_ENV: production
           # AWS_REGION is a reserved Lambda runtime variable — it's already
           # set automatically, SAM would reject an explicit override here.

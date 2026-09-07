@@ -57,7 +57,7 @@ export class MediaService {
       );
     }
 
-    const key = `incidents/${dto.incidentId}/${randomUUID()}-${sanitizeFilename(dto.filename)}`;
+    const key = `${incidentKeyPrefix(dto.incidentId)}${randomUUID()}-${sanitizeFilename(dto.filename)}`;
     return this.storage.getPresignedUploadUrl(key, dto.contentType);
   }
 
@@ -74,6 +74,21 @@ export class MediaService {
       );
     }
 
+    // `fileUrl` is the one field in this flow that arrives from the browser
+    // rather than from a value the server itself just issued, so it is
+    // checked before it is stored — anything the gallery later renders as
+    // `<img src>`/`<a href>` has to be provably a URL this bucket handed out
+    // for *this* incident (F9.4).
+    const key = this.storage.resolveOwnKey(
+      dto.fileUrl,
+      incidentKeyPrefix(incidentId),
+    );
+    if (!key) {
+      throw new BadRequestException(
+        'fileUrl must be an upload URL issued for this incident',
+      );
+    }
+
     const media = await this.prisma.media.create({
       data: {
         incidentId,
@@ -82,7 +97,10 @@ export class MediaService {
         format: dto.format,
         size: dto.size,
         status: 'uploaded',
-        url: dto.fileUrl,
+        // The canonical form of the validated key, never the client's own
+        // string — a matching origin and prefix still leave the query and
+        // fragment attacker-chosen.
+        url: this.storage.publicUrlForKey(key),
       },
     });
     return toMediaResponseDto(media);
@@ -146,7 +164,16 @@ export class MediaService {
       throw new ForbiddenException();
     }
 
-    await this.storage.deleteObject(keyFromUrl(media.url));
+    // Re-derived rather than trusted: the DB row is written by `create`
+    // above, but a row predating that validation could still name any key at
+    // all, and this is the call that would then erase it.
+    const key = this.storage.resolveOwnKey(
+      media.url,
+      incidentKeyPrefix(media.incidentId),
+    );
+    if (key) {
+      await this.storage.deleteObject(key);
+    }
     await this.prisma.media.delete({ where: { id: media.id } });
   }
 
@@ -168,7 +195,7 @@ function sanitizeFilename(filename: string): string {
   return filename.replace(/[^a-zA-Z0-9._-]/g, '_');
 }
 
-/** Recovers the S3 object key from a `fileUrl` produced by `S3StorageProvider`. */
-function keyFromUrl(url: string): string {
-  return decodeURIComponent(new URL(url).pathname.replace(/^\//, ''));
+/** The single key namespace an incident's attachments may live under — signed on the way out, required on the way back. */
+function incidentKeyPrefix(incidentId: string): string {
+  return `incidents/${incidentId}/`;
 }

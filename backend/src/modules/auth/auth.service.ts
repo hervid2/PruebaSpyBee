@@ -57,7 +57,18 @@ export class AuthService {
       include: { user: true },
     });
 
-    if (!stored || stored.revokedAt || stored.expiresAt < new Date()) {
+    if (!stored || stored.expiresAt < new Date()) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    // Reuse detection (F9.4). Rotation means a token is presented exactly
+    // once; seeing an already-revoked one again is not a normal outcome, it
+    // means two parties hold the same token — the legitimate client and
+    // whoever copied it. There is no way to tell which of the two is calling,
+    // so the whole family goes: every session for this user is revoked and
+    // both are forced back through a real login, which the thief cannot pass.
+    if (stored.revokedAt) {
+      await this.revokeAllForUser(stored.userId);
       throw new UnauthorizedException('Invalid refresh token');
     }
 
@@ -81,6 +92,24 @@ export class AuthService {
     const tokenHash = hashToken(rawToken);
     await this.prisma.refreshToken.updateMany({
       where: { userId, tokenHash, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+  }
+
+  /**
+   * Ends every session this user has. Called on refresh-token reuse (above)
+   * and on a password change (`UsersService.changePassword`) — changing a
+   * password is how someone responds to a suspected compromise, so leaving
+   * the sessions it was meant to cut off alive for the remaining days of
+   * their refresh-token TTL would defeat the point.
+   *
+   * Access tokens already issued are not revocable (they are stateless JWTs)
+   * and stay valid until they expire — 15 minutes by default, which is the
+   * trade-off that short TTL exists to bound.
+   */
+  async revokeAllForUser(userId: string): Promise<void> {
+    await this.prisma.refreshToken.updateMany({
+      where: { userId, revokedAt: null },
       data: { revokedAt: new Date() },
     });
   }

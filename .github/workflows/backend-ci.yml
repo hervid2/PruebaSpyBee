@@ -33,6 +33,12 @@ jobs:
           cache: npm
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
+      # F9.4 — `best-practices.md §Security` asks for `npm audit` in CI on
+      # both halves of the project, and neither pipeline had it. `high` is the
+      # gate rather than `critical`: the backend tree is clean today, so
+      # anything that trips this is something a `npm audit fix` introduced or
+      # a new advisory landed on, and it is worth stopping for.
+      - run: npm audit --audit-level=high
       - run: npm run lint
       - run: npm run type-check
       - run: npm run test -- --coverage

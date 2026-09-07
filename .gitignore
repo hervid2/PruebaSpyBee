@@ -50,6 +50,10 @@ Thumbs.db
 /screenshots/
 *.trace.zip
 
+# Local SAM invoke payload (`sam local invoke -e event.json`) — a scratch file
+# per developer, not a fixture the project depends on.
+backend/event.json
+
 # Misc
 *.log
 .eslintcache

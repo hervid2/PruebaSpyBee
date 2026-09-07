@@ -3,6 +3,7 @@ import request from 'supertest';
 import type { App } from 'supertest/types';
 import { createTestApp } from './utils/test-app';
 import type { FakePrismaService, FakeUser } from './utils/fake-prisma.service';
+import { REFRESH_TOKEN_COOKIE } from '../src/modules/auth/auth.constants';
 
 interface AccessTokenBody {
   accessToken: string;
@@ -128,6 +129,38 @@ describe('Users (e2e)', () => {
       await request(app.getHttpServer())
         .post('/auth/login')
         .send({ email: owner.email, password: 'password123' })
+        .expect(401);
+    });
+
+    // F9.4. A password change is the move someone makes when they think
+    // another party is in their account, so it has to cut that party off:
+    // before this, a refresh token taken earlier kept minting new access
+    // tokens for the rest of its seven-day TTL, whatever the password became.
+    it('revokes every existing session, so a refresh token issued before the change stops working', async () => {
+      const loginRes = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({ email: owner.email, password: 'password123' })
+        .expect(200);
+      const refreshCookie = (
+        loginRes.headers['set-cookie'] as unknown as string[]
+      ).find((c) => c.startsWith(REFRESH_TOKEN_COOKIE))!;
+      const accessToken = (loginRes.body as AccessTokenBody).accessToken;
+
+      // Still good right up to the change.
+      await request(app.getHttpServer())
+        .post('/auth/refresh')
+        .set('Cookie', refreshCookie)
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .patch('/users/me/password')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ currentPassword: 'password123', newPassword: 'newpassword456' })
+        .expect(204);
+
+      await request(app.getHttpServer())
+        .post('/auth/refresh')
+        .set('Cookie', refreshCookie)
         .expect(401);
     });
 

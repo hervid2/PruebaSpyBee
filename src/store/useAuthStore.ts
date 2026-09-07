@@ -41,7 +41,13 @@ function writeAccessTokenCookie(token: string) {
   if (typeof document === 'undefined') return;
   const exp = decodeJwtExp(token);
   const maxAge = exp ? Math.max(exp - Math.floor(Date.now() / 1000), 0) : 900;
-  document.cookie = `${ACCESS_TOKEN_COOKIE}=${encodeURIComponent(token)}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  // `Secure` in production, and conditional rather than unconditional because
+  // a `Secure` cookie is silently dropped over plain HTTP — which is what
+  // local dev and the CI e2e run are (F9.4, same reasoning as the backend's
+  // `setRefreshCookie`). Without it, one downgraded request is enough to put
+  // a live access token on the wire in the clear.
+  const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+  document.cookie = `${ACCESS_TOKEN_COOKIE}=${encodeURIComponent(token)}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
 }
 
 function clearAccessTokenCookie() {

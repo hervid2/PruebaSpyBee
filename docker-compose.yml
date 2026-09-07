@@ -1,0 +1,49 @@
+# Local Postgres for the e2e suite (F9.5).
+#
+# Until now the Playwright specs only ever ran in CI: they need a real backend
+# and a real database (F7.5 replaced the frontend-only job with an ephemeral
+# `postgres:16` service), and there was nothing in the repo that stood one up.
+# Verifying a spec locally meant hand-rolling a throwaway config to bypass
+# `globalSetup`, which is not a thing anyone should have to invent twice.
+#
+# Deliberately the same image and the same credentials as the `postgres`
+# service in .github/workflows/ci.yml. If that ever changes, change it here in
+# the same commit — a local suite that passes against a different database than
+# CI is worse than no local suite.
+#
+#   npm run e2e:db:up     start it
+#   npm run e2e:local     start it, migrate, seed, and run the whole suite
+#   npm run e2e:db:down   stop it and delete the volume
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: flyworkflow
+      POSTGRES_PASSWORD: flyworkflow
+      POSTGRES_DB: flyworkflow
+    ports:
+      # 5433 on the host, not 5432, and this is the one thing deliberately
+      # *unlike* CI. A developer machine very often already runs its own
+      # PostgreSQL on the default port; the container still starts and still
+      # reports healthy, but connections from the host reach the other server,
+      # which then rejects these credentials — an authentication error that
+      # reads like a bug in this file rather than a port collision. (Verified
+      # the hard way while writing this.) The port is also the only thing that
+      # can differ safely: the image, the credentials, the schema and the seed
+      # are what make a local run mean the same as a CI run, and
+      # scripts/e2e-local.mjs builds DATABASE_URL from this same variable.
+      # Override with E2E_DB_PORT if 5433 is taken too.
+      - '${E2E_DB_PORT:-5433}:5432'
+    healthcheck:
+      # Same probe CI uses, so "ready" means the same thing in both places.
+      test: ['CMD-SHELL', 'pg_isready -U flyworkflow -d flyworkflow']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      # Named, not bind-mounted: `npm run e2e:db:down` removes it, so a broken
+      # run is never something you have to debug around next time.
+      - flyworkflow-e2e-db:/var/lib/postgresql/data
+
+volumes:
+  flyworkflow-e2e-db:

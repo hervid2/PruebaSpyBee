@@ -1,7 +1,17 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "rootDir": "src"
+    "rootDir": "src",
+    // Inside `dist`, deliberately (F9.5). `tsconfig.json` sets
+    // `incremental: true` and `nest-cli.json` sets `deleteOutDir: true`, and
+    // the two disagree: `nest build` wipes `dist` and then asks a tsbuildinfo
+    // that survived the wipe what needs recompiling. The answer is "nothing",
+    // so the second build in a row exits 0 and leaves an empty `dist` — which
+    // then fails as `Cannot find module dist/main.js` somewhere far away from
+    // the cause. Keeping the incremental state inside the folder that gets
+    // deleted makes the two agree. CI never saw this because a fresh checkout
+    // has no tsbuildinfo to begin with.
+    "tsBuildInfoFile": "./dist/tsconfig.build.tsbuildinfo"
   },
   "exclude": ["node_modules", "test", "dist", "prisma", "**/*spec.ts"]
 }

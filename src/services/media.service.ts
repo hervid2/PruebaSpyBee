@@ -29,12 +29,6 @@ function clientFetch<T>(path: string, options: Parameters<typeof apiFetch>[1] = 
   return apiFetch<T>(path, { ...options, accessToken }, refreshAccessToken);
 }
 
-function mediaTypeFromFile(file: File): Media['type'] {
-  if (file.type.startsWith('image/')) return 'image';
-  if (file.type.startsWith('video/')) return 'video';
-  return 'document';
-}
-
 /** Presign → PUT directly to S3 → record the attachment. Throws on any step's failure. */
 export async function uploadMedia(incidentId: string, file: File): Promise<Media> {
   const { uploadUrl, fileUrl } = await clientFetch<PresignResponse>('/media/presign', {
@@ -49,6 +43,11 @@ export async function uploadMedia(incidentId: string, file: File): Promise<Media
 
   // Presigned URL carries its own auth — a plain fetch, not through the API
   // client (wrong base URL, and no Authorization header belongs on an S3 PUT).
+  // `file.size` is now part of that signature (F9.5), and the browser derives
+  // the `Content-Length` header from this exact body — so passing the `File`
+  // straight through is what keeps the two in agreement. Wrapping or
+  // re-encoding the body here would change its length and S3 would reject the
+  // PUT; `Content-Length` cannot be set by hand to paper over that.
   const putRes = await fetch(uploadUrl, {
     method: 'PUT',
     headers: { 'Content-Type': file.type },
@@ -58,15 +57,13 @@ export async function uploadMedia(incidentId: string, file: File): Promise<Media
     throw new Error(`Upload to storage failed (${putRes.status})`);
   }
 
+  // Only what the client legitimately owns: where it wrote, and what to call
+  // it. `type`, `format` and `size` used to be sent from here and are now read
+  // off the stored object by the server (F9.5) — the response still carries
+  // them, and they are the verified values.
   const record = await clientFetch<MediaResponse>(`/incidents/${incidentId}/media`, {
     method: 'POST',
-    body: {
-      fileUrl,
-      name: file.name,
-      type: mediaTypeFromFile(file),
-      format: file.name.split('.').pop() ?? '',
-      size: file.size,
-    },
+    body: { fileUrl, name: file.name },
   });
 
   return {

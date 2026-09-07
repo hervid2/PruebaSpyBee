@@ -1,13 +1,6 @@
-import {
-  IsIn,
-  IsInt,
-  IsNotEmpty,
-  IsString,
-  Max,
-  MaxLength,
-  Min,
-} from 'class-validator';
+import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
+/** Same shape and same reasoning as `CreateMediaDto` after F9.5 — the object is what describes itself. */
 export class CreateProjectPlanDto {
   @IsString()
   @IsNotEmpty()
@@ -17,17 +10,4 @@ export class CreateProjectPlanDto {
   @IsNotEmpty()
   @MaxLength(255)
   name!: string;
-
-  @IsIn(['image', 'document'])
-  type!: 'image' | 'document';
-
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(50)
-  format!: string;
-
-  @IsInt()
-  @Min(1)
-  @Max(50 * 1024 * 1024)
-  size!: number;
 }

@@ -29,10 +29,6 @@ export function deleteProjectPlan(planId: string): Promise<void> {
   return clientFetch<void>(`/plans/${planId}`, { method: 'DELETE' });
 }
 
-function planTypeFromFile(file: File): ProjectPlan['type'] {
-  return file.type === 'application/pdf' ? 'document' : 'image';
-}
-
 /** Presign → PUT directly to S3 → record the plan. Throws on any step's failure. */
 export async function uploadProjectPlan(projectId: string, file: File): Promise<ProjectPlan> {
   const { uploadUrl, fileUrl } = await clientFetch<PresignResponse>(
@@ -52,14 +48,10 @@ export async function uploadProjectPlan(projectId: string, file: File): Promise<
     throw new Error(`Upload to storage failed (${putRes.status})`);
   }
 
+  // See media.service.ts: the server derives type/format/size from the object
+  // it can actually see in the bucket (F9.5).
   return clientFetch<ProjectPlan>(`/projects/${projectId}/plans`, {
     method: 'POST',
-    body: {
-      fileUrl,
-      name: file.name,
-      type: planTypeFromFile(file),
-      format: file.name.split('.').pop() ?? '',
-      size: file.size,
-    },
+    body: { fileUrl, name: file.name },
   });
 }

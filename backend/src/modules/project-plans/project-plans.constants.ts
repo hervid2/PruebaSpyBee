@@ -15,6 +15,23 @@ export const ALLOWED_PROJECT_PLAN_CONTENT_TYPES: Record<
 
 export const MAX_PROJECT_PLAN_SIZE_BYTES = 20 * 1024 * 1024;
 
+/** Mirrors `MEDIA_FORMAT_BY_CONTENT_TYPE`, narrowed to the types a plan may be (F9.5). */
+export const PROJECT_PLAN_FORMAT_BY_CONTENT_TYPE: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+  'application/pdf': 'pdf',
+};
+
+export function projectPlanFormatFromContentType(contentType: string): string {
+  return (
+    PROJECT_PLAN_FORMAT_BY_CONTENT_TYPE[contentType] ??
+    contentType.split('/').pop() ??
+    contentType
+  );
+}
+
 export function projectPlanTypeFromContentType(
   contentType: string,
 ): 'image' | 'document' | null {

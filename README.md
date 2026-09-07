@@ -183,7 +183,10 @@ npm run type-check    # TypeScript sin emitir archivos
 npm run test          # Vitest (una ejecución)
 npm run test:watch    # Vitest en modo watch
 npm run test:coverage # Vitest con informe de cobertura HTML
-npm run test:e2e      # Playwright E2E (requiere servidor activo en :3000)
+npm run test:e2e      # Playwright E2E (requiere backend en :3001 y front en :3000)
+npm run e2e:local     # E2E completo en local: levanta Postgres, migra, siembra y ejecuta todo
+npm run e2e:db:up     # Solo la base de datos de pruebas (Docker)
+npm run e2e:db:down   # Detiene la base de datos y borra su volumen
 ```
 
 ---
@@ -237,17 +240,30 @@ Suite actual (~100 tests):
 
 ### E2E (Playwright)
 
-```bash
-# Con servidor de producción (recomendado para CI):
-npm run build
-npm run start &
-npm run test:e2e
+Desde F7.5 los specs se ejecutan contra el backend real, no contra un mock: necesitan una API viva y una base de datos con el seed cargado. `npm run e2e:local` (F9.5) monta esa pila entera con un solo comando y requiere únicamente Docker.
 
-# Con servidor de desarrollo:
-PLAYWRIGHT_DEV=1 npm run test:e2e
+```bash
+# Todo en uno: Postgres en Docker → migraciones → seed → backend → frontend → specs
+npm run e2e:local
+
+# Un solo spec, o cualquier flag de Playwright — los argumentos se pasan tal cual
+npm run e2e:local -- e2e/auth.spec.ts
+npm run e2e:local -- --ui
+
+# Al terminar, la base de datos sigue en pie (las siguientes ejecuciones arrancan antes)
+npm run e2e:db:down   # la detiene y borra el volumen
 
 # Ver informe HTML tras la ejecución:
 npx playwright show-report
+```
+
+`docker-compose.yml` usa la misma imagen `postgres:16` y las mismas credenciales que el servicio de `ci.yml`, a propósito: un suite local que pasa contra una base de datos distinta de la de CI es peor que no tener suite local. Si cambia una, cambia la otra en el mismo commit.
+
+`npm run test:e2e` sigue existiendo y sigue siendo lo que ejecuta CI, donde el backend ya está arrancado como paso previo del workflow. En local, sin backend, ese comando falla en `globalSetup` (que pre-calienta tokens reales contra `/auth/login`) — usa `e2e:local`.
+
+```bash
+# Solo el frontend, contra un backend que ya tengas levantado a mano:
+PLAYWRIGHT_DEV=1 npm run test:e2e
 ```
 
 **Proyectos configurados:** Desktop Chrome (1280×800) + Mobile Chrome (Pixel 5, 393×851).
@@ -269,8 +285,11 @@ quality job:
   npm ci → lint → type-check → test --coverage → build
 
 e2e job (necesita quality):
+  postgres:16 como service → migrate + seed → build backend → arranca backend
   npm ci → playwright install → build → test:e2e → sube playwright-report/
 ```
+
+Ambos jobs (y `backend-ci.yml`) fijan la misma versión de Node vía `NODE_VERSION`. Antes `quality` iba en 20 y los otros dos en 22, de modo que "pasa CI" significaba dos runtimes distintos según el job — y el que ejecutaba `npm run build` no era el que ejecutaba lo construido.
 
 ### `.github/workflows/deploy.yml` — despliegue (push a `main`)
 

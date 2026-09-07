@@ -54,6 +54,13 @@ Thumbs.db
 # per developer, not a fixture the project depends on.
 backend/event.json
 
+# Claude Code (F9.5). `.claude/settings.json` IS committed — it is project
+# configuration, the same kind of thing as .eslintrc.json, and sharing it is
+# the point. What follows is per-developer or per-run state that would only
+# ever cause conflicts.
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+
 # Misc
 *.log
 .eslintcache

@@ -38,6 +38,19 @@ Parameters:
       Allowed CORS origin for both the API (backend CORS/helmet setup) and
       the MediaBucket's PUT CORS rule — the deployed Vercel URL in
       production (F6.3). Never '*'.
+  MaxConcurrency:
+    Type: Number
+    Default: 5
+    MinValue: 1
+    Description: >
+      Hard ceiling on simultaneously running Lambda instances (F9.4). Two
+      separate limits depend on it. Postgres: every cold start can open its
+      own connection, and Railway's free tier runs out of them long before
+      Lambda's default account-wide concurrency of 1000 would (roadmap.md
+      §Risks). Rate limiting: `@nestjs/throttler` counts in each instance's
+      own memory, with no shared store, so the API's real ceiling is
+      APP_THROTTLE_LIMIT x running instances — unbounded concurrency means an
+      unbounded rate limit, and this is what turns it back into a number.
   AlarmEmail:
     Type: String
     Default: ''
@@ -83,6 +96,7 @@ Resources:
       PackageType: Image
       Architectures:
         - x86_64
+      ReservedConcurrentExecutions: !Ref MaxConcurrency
       Environment:
         Variables:
           DATABASE_URL: !Ref DatabaseUrl

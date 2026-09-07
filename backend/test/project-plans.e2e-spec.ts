@@ -179,6 +179,31 @@ describe('Project plans (e2e)', () => {
       expect(body.type).toBe('image');
     });
 
+    // F9.4, same boundary as `POST /incidents/:id/media`: `fileUrl` comes back
+    // from the browser after its direct PUT, and a plan's URL is both rendered
+    // as a link/preview and used to choose the object to delete.
+    it.each([
+      ['a host the attacker controls', 'https://attacker.test/floor-1.png'],
+      [
+        "another project's key in our own bucket",
+        'https://fake-bucket.s3.fake-region.amazonaws.com/projects/other-project/plans/floor-1.png',
+      ],
+    ])('rejects a forged fileUrl (%s) with 400', async (_label, fileUrl) => {
+      const token = await loginAs(app, orgAAdmin, 'password123');
+
+      await request(app.getHttpServer())
+        .post(`/projects/${projectA.id}/plans`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          fileUrl,
+          name: 'floor-1.png',
+          type: 'image',
+          format: 'png',
+          size: 1024,
+        })
+        .expect(400);
+    });
+
     it('rejects a non-admin member with 403', async () => {
       const token = await loginAs(app, orgAMember, 'password123');
 

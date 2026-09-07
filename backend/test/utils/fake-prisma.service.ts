@@ -274,9 +274,13 @@ export class FakePrismaService {
       format: params.format ?? 'jpg',
       size: params.size ?? 1024,
       status: params.status ?? 'uploaded',
+      // Built from the incident's own id so the fixture is a URL the real
+      // presign flow could actually have issued — `MediaService` now checks
+      // that a stored URL sits under the incident's key prefix (F9.4), and a
+      // fixture that ignored the prefix would quietly skip the S3 delete.
       url:
         params.url ??
-        'https://fake-bucket.s3.fake-region.amazonaws.com/incidents/test/test-file.jpg',
+        `https://fake-bucket.s3.fake-region.amazonaws.com/incidents/${params.incidentId}/test-file.jpg`,
       createdAt: params.createdAt ?? new Date(),
     };
     this.medias.push(media);
@@ -297,7 +301,7 @@ export class FakePrismaService {
       size: params.size ?? 2048,
       url:
         params.url ??
-        'https://fake-bucket.s3.fake-region.amazonaws.com/projects/test/plans/floor-1.pdf',
+        `https://fake-bucket.s3.fake-region.amazonaws.com/projects/${params.projectId}/plans/floor-1.pdf`,
       createdAt: params.createdAt ?? new Date(),
     };
     this.projectPlans.push(plan);
@@ -420,13 +424,17 @@ export class FakePrismaService {
       where,
       data,
     }: {
-      where: { userId: string; tokenHash: string; revokedAt: null };
+      // `tokenHash` is optional the way it is in Prisma's own filter: with it,
+      // this revokes one session (logout); without it, all of them
+      // (`AuthService.revokeAllForUser` — reuse detection and password
+      // change, F9.4).
+      where: { userId: string; tokenHash?: string; revokedAt: null };
       data: Partial<FakeRefreshToken>;
     }): Promise<{ count: number }> => {
       const matches = this.refreshTokens.filter(
         (t) =>
           t.userId === where.userId &&
-          t.tokenHash === where.tokenHash &&
+          (where.tokenHash === undefined || t.tokenHash === where.tokenHash) &&
           t.revokedAt === null,
       );
       matches.forEach((row) => Object.assign(row, data));

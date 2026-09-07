@@ -2,17 +2,24 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiHeader,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { ReportsService } from './reports.service';
 import { DataTokenStatusDto } from './dto/data-token-status.dto';
 import { DataTokenCreatedDto } from './dto/data-token-created.dto';
 import { DashboardDataQueryDto } from './dto/dashboard-data-query.dto';
 import { DashboardDataResponseDto } from './dto/dashboard-data-response.dto';
+import { DATA_TOKEN_HEADER } from './reports.constants';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface';
@@ -56,13 +63,20 @@ export class ReportsController {
 
   @Get('dashboard-data')
   @Public()
+  @ApiHeader({
+    name: DATA_TOKEN_HEADER,
+    required: false,
+    description:
+      'The data token, for callers that can set headers. Preferred over ?token=, which keeps a credential in the URL; the header wins when both are sent.',
+  })
   @ApiOperation({
     summary:
-      "Aggregated dashboard metrics as JSON, gated by ?token= — meant for Power BI's Web connector or Looker Studio, not the session JWT",
+      "Aggregated dashboard metrics as JSON, gated by the data token in X-Data-Token or ?token= — meant for Power BI's Web connector or Looker Studio, not the session JWT",
   })
   getDashboardData(
     @Query() query: DashboardDataQueryDto,
+    @Headers(DATA_TOKEN_HEADER) headerToken?: string,
   ): Promise<DashboardDataResponseDto> {
-    return this.reportsService.getDashboardData(query);
+    return this.reportsService.getDashboardData(query, headerToken);
   }
 }

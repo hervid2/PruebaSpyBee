@@ -56,6 +56,24 @@ const nextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: 'i.pravatar.cc' },
       { protocol: 'https', hostname: 'picsum.photos' },
+      // The media bucket (F9.6). Without this every gallery tile throws:
+      // `next/image` refuses a remote host that is not listed, and until F9.6
+      // no real upload was ever reachable, so the omission never showed —
+      // the seeded demo media points at picsum.photos above.
+      //
+      // Named exactly rather than matched with a wildcard like
+      // `*.s3.*.amazonaws.com`: this list is what the image optimizer will
+      // fetch on the server's behalf, so widening it to every S3 bucket on
+      // AWS turns it into an open proxy for anyone who can get a URL into a
+      // rendered `src`. Unset in local dev, where there is no bucket.
+      ...(process.env.NEXT_PUBLIC_MEDIA_HOST
+        ? [
+            {
+              protocol: 'https',
+              hostname: process.env.NEXT_PUBLIC_MEDIA_HOST,
+            },
+          ]
+        : []),
     ],
   },
   async headers() {

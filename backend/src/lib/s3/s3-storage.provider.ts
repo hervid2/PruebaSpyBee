@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   DeleteObjectCommand,
+  GetObjectCommand,
   HeadObjectCommand,
   NotFound,
   PutObjectCommand,
@@ -13,7 +14,11 @@ import type {
   StorageProvider,
   StoredObject,
 } from './storage-provider.interface';
-import { DEFAULT_PRESIGNED_URL_EXPIRES_IN_SECONDS } from './s3.constants';
+import {
+  DEFAULT_PRESIGNED_DOWNLOAD_EXPIRES_IN_SECONDS,
+  DEFAULT_PRESIGNED_URL_EXPIRES_IN_SECONDS,
+  PRESIGNED_DOWNLOAD_SIGNING_WINDOW_SECONDS,
+} from './s3.constants';
 
 @Injectable()
 export class S3StorageProvider implements StorageProvider {
@@ -21,6 +26,7 @@ export class S3StorageProvider implements StorageProvider {
   private readonly bucket: string;
   private readonly region: string;
   private readonly expiresInSeconds: number;
+  private readonly downloadExpiresInSeconds: number;
 
   constructor(private readonly configService: ConfigService) {
     this.region = this.configService.getOrThrow<string>('AWS_REGION');
@@ -28,6 +34,11 @@ export class S3StorageProvider implements StorageProvider {
     this.expiresInSeconds = Number(
       this.configService.get<string>('S3_PRESIGNED_URL_EXPIRES_IN_SECONDS') ??
         DEFAULT_PRESIGNED_URL_EXPIRES_IN_SECONDS,
+    );
+    this.downloadExpiresInSeconds = Number(
+      this.configService.get<string>(
+        'S3_PRESIGNED_DOWNLOAD_EXPIRES_IN_SECONDS',
+      ) ?? DEFAULT_PRESIGNED_DOWNLOAD_EXPIRES_IN_SECONDS,
     );
     // Credentials come from the default provider chain (the Lambda execution
     // role in AWS, a local AWS CLI profile in dev) — never a key/secret read
@@ -67,6 +78,29 @@ export class S3StorageProvider implements StorageProvider {
       expiresIn: this.expiresInSeconds,
     });
     return { uploadUrl, fileUrl: this.publicUrlForKey(key) };
+  }
+
+  async getPresignedDownloadUrl(
+    key: string,
+    options: { downloadFilename?: string } = {},
+  ): Promise<string> {
+    const command = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+      ...(options.downloadFilename
+        ? {
+            ResponseContentDisposition: `attachment; filename="${sanitizeDownloadFilename(options.downloadFilename)}"`,
+          }
+        : {}),
+    });
+    return getSignedUrl(this.client, command, {
+      expiresIn: this.downloadExpiresInSeconds,
+      // Rounded down to the window boundary rather than "now", so every
+      // request inside one window signs to the identical string and stays
+      // cacheable — see PRESIGNED_DOWNLOAD_SIGNING_WINDOW_SECONDS for why that
+      // matters more here than it looks.
+      signingDate: currentSigningWindowStart(),
+    });
   }
 
   async headObject(key: string): Promise<StoredObject | null> {
@@ -123,4 +157,21 @@ export class S3StorageProvider implements StorageProvider {
   private get publicOrigin(): string {
     return `https://${this.bucket}.s3.${this.region}.amazonaws.com`;
   }
+}
+
+/** Start of the window `now` falls in, so signatures repeat instead of drifting per request. */
+function currentSigningWindowStart(): Date {
+  const windowMs = PRESIGNED_DOWNLOAD_SIGNING_WINDOW_SECONDS * 1000;
+  return new Date(Math.floor(Date.now() / windowMs) * windowMs);
+}
+
+/**
+ * `filename="..."` is a quoted string in a header this function composes, so a
+ * name containing a quote or a newline would end the field early and let the
+ * rest be read as another header — a response-splitting shape, reached here by
+ * whatever the uploader typed. Names are stored free-form (`CreateMediaDto`
+ * only bounds the length), so they are narrowed at the point of use.
+ */
+function sanitizeDownloadFilename(name: string): string {
+  return name.replace(/[^a-zA-Z0-9._ -]/g, '_').slice(0, 200) || 'download';
 }

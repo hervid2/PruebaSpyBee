@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import { Prisma } from '@prisma/client';
+import { MediaType, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface';
 import {
@@ -125,7 +125,10 @@ export class MediaService {
         url: this.storage.publicUrlForKey(key),
       },
     });
-    return toMediaResponseDto(media);
+    return toMediaResponseDto({
+      ...media,
+      url: await this.readableUrl(media),
+    });
   }
 
   /** Paginated media gallery across every non-deleted incident in the caller's org (roadmap 8.4). */
@@ -151,10 +154,17 @@ export class MediaService {
       this.prisma.media.count({ where }),
     ]);
 
-    return toPaginatedResponse(
-      items.map((m) =>
+    // Signed one by one rather than served as stored: the row holds the
+    // bucket's canonical URL, which is unreadable from a browser because the
+    // bucket blocks public access (F9.6). Signing is local HMAC with no
+    // network call, and the window rounding in the provider means a page of
+    // tiles produces the same URLs it produced a minute ago — so `next/image`
+    // and the browser both still cache.
+    const signed = await Promise.all(
+      items.map(async (m) =>
         toMediaGalleryItemDto({
           ...m,
+          url: await this.readableUrl(m),
           incident: {
             id: m.incident.id,
             sequenceId: m.incident.sequenceId,
@@ -166,10 +176,39 @@ export class MediaService {
           },
         }),
       ),
-      total,
-      page,
-      pageSize,
     );
+
+    return toPaginatedResponse(signed, total, page, pageSize);
+  }
+
+  /**
+   * Turns a stored canonical URL into one a browser can actually fetch (F9.6).
+   *
+   * The key is re-derived rather than taken apart here, for the same reason
+   * the delete path re-derives it (F9.4): rows written before that validation
+   * existed can name anything at all, and this is the call that would
+   * otherwise sign a URL for it. A row that fails the check keeps its stored
+   * URL — it will not load, which is the honest outcome, rather than being
+   * quietly reissued as something signed and trusted.
+   *
+   * Documents get `Content-Disposition: attachment`, so a PDF downloads
+   * instead of rendering on the bucket's origin; images and video must stay
+   * inline for `<img>`/`<video>` to display them at all.
+   */
+  private async readableUrl(media: {
+    incidentId: string;
+    name: string;
+    type: MediaType;
+    url: string;
+  }): Promise<string> {
+    const key = this.storage.resolveOwnKey(
+      media.url,
+      incidentKeyPrefix(media.incidentId),
+    );
+    if (!key) return media.url;
+    return this.storage.getPresignedDownloadUrl(key, {
+      ...(media.type === 'document' ? { downloadFilename: media.name } : {}),
+    });
   }
 
   async remove(mediaId: string, user: AuthenticatedUser): Promise<void> {

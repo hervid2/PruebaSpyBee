@@ -78,4 +78,5 @@ jobs:
               JwtAccessExpiresInSeconds="900" \
               JwtRefreshExpiresInDays="7" \
               S3PresignedUrlExpiresInSeconds="300" \
+              S3PresignedDownloadExpiresInSeconds="1800" \
               AlarmEmail="${{ secrets.ALARM_EMAIL }}"

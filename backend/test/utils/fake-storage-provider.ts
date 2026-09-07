@@ -27,6 +27,7 @@ export class FakeStorageProvider implements StorageProvider {
     contentLength: number;
   }[] = [];
   readonly deletedKeys: string[] = [];
+  readonly downloadCalls: { key: string; downloadFilename?: string }[] = [];
   private readonly objects = new Map<string, StoredObject>();
 
   getPresignedUploadUrl(
@@ -45,6 +46,24 @@ export class FakeStorageProvider implements StorageProvider {
   /** Stands in for the browser's direct PUT: after this, `headObject(key)` sees an object. */
   putObject(key: string, object: StoredObject): void {
     this.objects.set(key, object);
+  }
+
+  /**
+   * Mirrors the real provider's shape closely enough for the specs to tell a
+   * signed read URL from the stored one, and to see the `attachment`
+   * disposition documents get (F9.6) — without pulling in real signing.
+   */
+  getPresignedDownloadUrl(
+    key: string,
+    options: { downloadFilename?: string } = {},
+  ): Promise<string> {
+    this.downloadCalls.push({ key, ...options });
+    const disposition = options.downloadFilename
+      ? `&response-content-disposition=attachment%3B%20filename%3D%22${encodeURIComponent(options.downloadFilename)}%22`
+      : '';
+    return Promise.resolve(
+      `${this.publicUrlForKey(key)}?X-Amz-Signature=fake-download${disposition}`,
+    );
   }
 
   headObject(key: string): Promise<StoredObject | null> {

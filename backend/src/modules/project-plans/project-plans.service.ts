@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
+import { MediaType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface';
 import {
@@ -104,7 +105,10 @@ export class ProjectPlansService {
         url: this.storage.publicUrlForKey(key),
       },
     });
-    return toProjectPlanResponseDto(plan);
+    return toProjectPlanResponseDto({
+      ...plan,
+      url: await this.readableUrl(plan),
+    });
   }
 
   async list(
@@ -117,7 +121,38 @@ export class ProjectPlansService {
       where: { projectId },
       orderBy: { createdAt: 'desc' },
     });
-    return plans.map(toProjectPlanResponseDto);
+    return Promise.all(
+      plans.map(async (plan) =>
+        toProjectPlanResponseDto({
+          ...plan,
+          url: await this.readableUrl(plan),
+        }),
+      ),
+    );
+  }
+
+  /**
+   * Same as `MediaService.readableUrl` (F9.6): the stored URL is the bucket's
+   * canonical one, which no browser can fetch, and the key is re-derived
+   * rather than trusted. A plan is an image or a PDF, and the PDF is the case
+   * A9 wanted `Content-Disposition: attachment` for — a plan opened from
+   * `/mapa` should download rather than render on the bucket's origin, while
+   * an image has to stay inline to be previewable.
+   */
+  private async readableUrl(plan: {
+    projectId: string;
+    name: string;
+    type: MediaType;
+    url: string;
+  }): Promise<string> {
+    const key = this.storage.resolveOwnKey(
+      plan.url,
+      planKeyPrefix(plan.projectId),
+    );
+    if (!key) return plan.url;
+    return this.storage.getPresignedDownloadUrl(key, {
+      ...(plan.type === 'document' ? { downloadFilename: plan.name } : {}),
+    });
   }
 
   async remove(planId: string, user: AuthenticatedUser): Promise<void> {

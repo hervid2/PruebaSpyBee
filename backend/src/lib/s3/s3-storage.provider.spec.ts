@@ -182,3 +182,64 @@ describe('S3StorageProvider.headObject', () => {
     );
   });
 });
+
+/**
+ * F9.6 — the read path. Before this there was none: rows stored the bucket's
+ * canonical URL and the gallery pointed `<img src>` at it, which a bucket with
+ * public access blocked answers with 403.
+ */
+describe('S3StorageProvider.getPresignedDownloadUrl', () => {
+  const provider = makeProvider();
+  const KEY = 'incidents/abc/uuid-foto.jpg';
+
+  it('signs a GET for the key', async () => {
+    const url = new URL(await provider.getPresignedDownloadUrl(KEY));
+    expect(url.origin + url.pathname).toBe(`${ORIGIN}/${KEY}`);
+    expect(url.searchParams.get('X-Amz-Signature')).toEqual(expect.any(String));
+  });
+
+  it('repeats the identical URL for repeated calls in the same window', async () => {
+    // Not cosmetic. The gallery renders through `next/image`, which caches by
+    // URL — a signature carrying a fresh `X-Amz-Date` per request is a fresh
+    // cache key per request, so every page view would re-download and
+    // re-optimize every photo.
+    const [first, second] = await Promise.all([
+      provider.getPresignedDownloadUrl(KEY),
+      provider.getPresignedDownloadUrl(KEY),
+    ]);
+    expect(first).toBe(second);
+  });
+
+  it('signs an attachment disposition when a download filename is given', async () => {
+    const url = new URL(
+      await provider.getPresignedDownloadUrl(KEY, {
+        downloadFilename: 'informe.pdf',
+      }),
+    );
+    expect(url.searchParams.get('response-content-disposition')).toBe(
+      'attachment; filename="informe.pdf"',
+    );
+    // The override is part of the signature, so it cannot be stripped or
+    // rewritten by whoever holds the URL.
+    expect(url.searchParams.get('X-Amz-SignedHeaders')).toBe('host');
+  });
+
+  it('omits the disposition entirely when no filename is given', async () => {
+    // Images and video have to stay inline or `<img>`/`<video>` cannot show them.
+    const url = new URL(await provider.getPresignedDownloadUrl(KEY));
+    expect(url.searchParams.get('response-content-disposition')).toBeNull();
+  });
+
+  it('neutralises a filename that would break out of the quoted header', async () => {
+    // Names are stored free-form, so a quote or a newline here would end the
+    // `filename="..."` field early and let the rest read as another header.
+    const url = new URL(
+      await provider.getPresignedDownloadUrl(KEY, {
+        downloadFilename: 'evil".pdf\r\nX-Injected: 1',
+      }),
+    );
+    const disposition = url.searchParams.get('response-content-disposition');
+    expect(disposition).not.toContain('X-Injected: 1');
+    expect(disposition).toMatch(/^attachment; filename="[a-zA-Z0-9._ -]*"$/);
+  });
+});

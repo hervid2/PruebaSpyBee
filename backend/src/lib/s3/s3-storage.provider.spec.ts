@@ -2,6 +2,22 @@ import type { ConfigService } from '@nestjs/config';
 import { NotFound } from '@aws-sdk/client-s3';
 import { S3StorageProvider } from './s3-storage.provider';
 
+/**
+ * F9.7. Every signing case below reaches the AWS SDK's default credential
+ * provider chain, and that chain is why Backend CI had been red since F9.4:
+ * on a developer machine it quietly finds the AWS CLI profile in `~/.aws`
+ * and signs, while on a runner it finds nothing and `getSignedUrl` throws
+ * before any assertion runs. The suite therefore passed for whoever wrote it
+ * and failed for everyone else — the failure arrived with F9.4's first
+ * presign case and grew with each one F9.5 and F9.6 added.
+ *
+ * Static dummy credentials make the signature depend on nothing but this
+ * file. They never reach a real endpoint: every case below inspects the
+ * shape of a URL, and nothing here performs a request.
+ */
+process.env.AWS_ACCESS_KEY_ID = 'test-access-key-id';
+process.env.AWS_SECRET_ACCESS_KEY = 'test-secret-access-key';
+
 const BUCKET = 'flyworkflow-media';
 const REGION = 'us-east-1';
 const ORIGIN = `https://${BUCKET}.s3.${REGION}.amazonaws.com`;

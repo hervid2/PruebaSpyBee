@@ -136,6 +136,7 @@ Code is documented minimally but professionally — it's not "no comments" flatl
 - Passwords with bcrypt, never in plaintext or with a reversible hash.
 - Refresh token in an `httpOnly`, `Secure`, `SameSite=None` cookie (cross-domain Vercel↔API Gateway).
 - `npm audit` (or equivalent) as part of the CI pipeline, both in `frontend` and `backend`.
+- Where an advisory has no upstream fix, the dependency is pinned forward with an npm `overrides` entry rather than by lowering the gate. The backend currently overrides `multer` to `2.3.0`: `@nestjs/platform-express` pins `2.2.0` exactly, four DoS advisories land on `<=2.2.0`, and every published NestJS release — including `12.0.1` — still pins the vulnerable version, while `npm audit fix --force` would "fix" it by downgrading `@nestjs/core` to `7.5.5`. Nothing in this API uploads through multer (media goes to S3 via presigned PUTs), so the vulnerable path is not reachable here; the override exists so the gate stays at `high` and keeps reporting honestly. Drop it once a NestJS release moves off `2.2.0`.
 - Rotatable secrets, never committed — if one leaks by mistake, it gets rotated, never "well, it's already committed so never mind".
 - Account-level lockout on repeated failed logins, counted in the database rather than per process — see the decision on rate limiting below for why per-IP throttling is not enough on its own.
 

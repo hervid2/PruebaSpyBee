@@ -38,6 +38,11 @@ Thumbs.db
 
 # Testing
 /coverage
+# The backend is a separate package with its own Jest run, and `/coverage`
+# above is anchored to the repo root, so `npm run test -- --coverage` there
+# (the exact command backend-ci.yml runs) left ~180 untracked HTML files
+# that the next `git add -A` would have committed.
+/backend/coverage
 /playwright-report
 /test-results
 /playwright/.cache/

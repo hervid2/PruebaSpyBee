@@ -8,6 +8,7 @@
  */
 import { getAuditLog } from '@/services/audit-log.service';
 import { ApiError } from '@/lib/api-client';
+import { firstParam, parsePageParam } from '@/lib/search-params';
 import HistorialView from '@/components/historial/HistorialView';
 import HistorialForbidden from '@/components/historial/HistorialForbidden';
 
@@ -17,14 +18,11 @@ export const metadata = {
   title: 'Historial de Incidencias',
 };
 
-interface HistorialPageProps {
-  searchParams: { page?: string; projectId?: string; userId?: string };
-}
-
-export default async function HistorialPage({ searchParams }: HistorialPageProps) {
-  const parsedPage = Number(searchParams.page);
-  const page = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
-  const { projectId, userId } = searchParams;
+export default async function HistorialPage({ searchParams }: PageProps<'/historial'>) {
+  const params = await searchParams;
+  const page = parsePageParam(params.page);
+  const projectId = firstParam(params.projectId);
+  const userId = firstParam(params.userId);
 
   try {
     const auditLog = await getAuditLog({ page, projectId, userId });

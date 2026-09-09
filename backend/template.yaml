@@ -147,9 +147,18 @@ Resources:
           # A delete marker whose last non-current version has expired is a
           # tombstone pointing at nothing; left behind it still costs a
           # listing entry.
+          #
+          # `ExpiredObjectDeleteMarker` stands alone, and must: S3 puts it and
+          # `ExpirationInDays` in the same <Expiration> element and refuses the
+          # pair, which is the `MalformedXML` 400 that failed every deploy of
+          # this stack from F9.5 until it was found. The combination was also
+          # not what it looked like -- on a versioned bucket `ExpirationInDays`
+          # applies to *current* objects, so had S3 accepted it, every piece of
+          # uploaded media would have picked up a delete marker one day after
+          # upload and vanished from the app. The malformed XML was the only
+          # thing standing between this rule and a scheduled outage.
           - Id: RemoveOrphanedDeleteMarkers
             Status: Enabled
-            ExpirationInDays: 1
             ExpiredObjectDeleteMarker: true
           # An upload the browser starts and abandons (tab closed, connection
           # dropped) leaves parts that are billed and are invisible to every

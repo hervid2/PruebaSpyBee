@@ -236,6 +236,12 @@ F9.3 designed `AlarmEmail` to be optional — unset means create the alarms, ski
 
 The lesson worth carrying: a one-second failure with no CloudFormation event is evidence the CLI never got as far as AWS, and should be read as a client-side error first. Reasoning from _which_ AWS permissions the new resources would need was plausible, self-consistent, and cost three attempts. Commit: `fix(ci): stop passing an empty AlarmEmail that the SAM CLI rejects`
 
+**Out of band — `fix/media-bucket-lifecycle-xml`** _(complete)_ — With the CLI's parse error out of the way, `sam deploy` reached AWS for the first time since F9.3 and failed properly, in 64 seconds instead of one. The stack events name the resource: `MediaBucket`, `UPDATE_FAILED`, `The XML you provided was not well-formed or did not validate against our published schema`. `AlarmTopic` and `ApplicationServerErrorAlarm` were both `CREATE_IN_PROGRESS` by then, which settles the older question — the IAM permissions were needed, and they work.
+
+F9.5's `RemoveOrphanedDeleteMarkers` rule set `ExpirationInDays: 1` and `ExpiredObjectDeleteMarker: true` together. S3 renders both into the same `<Expiration>` element and rejects the pair outright, which neither `sam validate` nor CloudFormation's own template validation catches, because it is an S3 API constraint rather than a schema one — the only place it surfaces is the resource handler, at deploy time.
+
+What makes this worth more than a typo fix is what the rule would have done had S3 accepted it. On a versioned bucket `ExpirationInDays` applies to _current_ objects, not to the delete markers the rule is named for: every uploaded attachment would have taken a delete marker one day after upload and disappeared from the application. The malformed XML is the only reason F9.5's media bucket did not ship a scheduled outage — and it would have been invisible in the demo, whose seeded media points at picsum.photos rather than the bucket. Commit: `fix(infra): drop the lifecycle property S3 rejects and would have honoured`
+
 **F9.8 — `docs/portfolio-readme-demo`** — Root README with demo links (Vercel + AWS API), screenshots, final architecture diagram. Commit: `docs: update root README with production links and architecture diagram`
 
 ---

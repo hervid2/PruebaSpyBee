@@ -96,7 +96,8 @@ Formulario completo validado con React Hook Form + Zod:
 flyworkflow-incidencias/
 ├── .github/workflows/
 │   ├── ci.yml               # Lint → type-check → test → build → E2E
-│   └── deploy.yml           # Deploy a Vercel en push a main
+│   ├── backend-ci.yml       # Calidad del backend
+│   └── backend-deploy.yml   # Migraciones + sam deploy en push a main
 ├── e2e/                     # Specs Playwright
 │   ├── helpers/auth.ts
 │   ├── auth.spec.ts
@@ -291,14 +292,26 @@ e2e job (necesita quality):
 
 Ambos jobs (y `backend-ci.yml`) fijan la misma versión de Node vía `NODE_VERSION`. Antes `quality` iba en 20 y los otros dos en 22, de modo que "pasa CI" significaba dos runtimes distintos según el job — y el que ejecutaba `npm run build` no era el que ejecutaba lo construido.
 
-### `.github/workflows/deploy.yml` — despliegue (push a `main`)
+### Despliegue del frontend — la integración Git de Vercel, no un workflow
 
-```
-deploy job:
-  vercel pull → vercel build --prod → vercel deploy --prebuilt --prod
-```
+El frontend **no** se despliega desde Actions. El proyecto de Vercel tiene
+Branch Tracking sobre `main`, así que Vercel construye y publica por su cuenta
+en cada push, y eso es lo único que hay.
 
-**Secrets de GitHub requeridos:** `VERCEL_TOKEN`, `NEXT_PUBLIC_MAPBOX_TOKEN`.
+Hubo un `deploy.yml` que hacía `vercel pull → build → deploy` en paralelo a
+eso. Se eliminó al descubrirse que llevaba tiempo fallando en su primer paso
+mientras el sitio se seguía actualizando sin problema: era un segundo camino
+al mismo sitio, con tres secrets propios que rotar y un rojo permanente en
+Actions que no significaba nada. Reintroducirlo tiene sentido si alguna vez el
+despliegue necesita pasos que Vercel no hace (una puerta de calidad previa,
+por ejemplo) — y entonces hay que desconectar el Branch Tracking, o cada push
+desplegará dos veces.
+
+**Variables del proyecto en Vercel** (no secrets de GitHub): `JWT_ACCESS_SECRET`
+lo lee el middleware en runtime y su ausencia hace fallar toda ruta
+autenticada; `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_APP_URL`,
+`NEXT_PUBLIC_MAPBOX_TOKEN` y `NEXT_PUBLIC_MEDIA_HOST` se incrustan al
+compilar, así que cambiarlas exige un redespliegue.
 
 ### `.github/workflows/backend-deploy.yml` — despliegue del backend (push a `main` que toque `backend/**`)
 

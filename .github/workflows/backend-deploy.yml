@@ -62,21 +62,61 @@ jobs:
       # image_repositories — no --guided, no --resolve-image-repos needed.
       # NoEcho params (DatabaseUrl/JwtAccessSecret) are never saved there by
       # design (aws-deploy-guide.md §7), and FrontendOrigin was left at its
-      # template default during the guided run — so all three, plus the
-      # three that ARE already in samconfig.toml, are passed explicitly here
-      # to avoid CLI --parameter-overrides silently dropping the latter.
-      # AlarmEmail (F9.3) joins them for the same reason: an unset ALARM_EMAIL
-      # secret resolves to an empty string, which the template's HasAlarmEmail
-      # condition reads as "create the alarms, skip the email subscription".
+      # template default during the guided run — so all three, plus the three
+      # that ARE already in samconfig.toml, are passed explicitly here to avoid
+      # CLI --parameter-overrides silently dropping the latter.
+      #
+      # The overrides are assembled in the shell rather than interpolated into
+      # the command line, which is what kept this job red from F9.3 until now.
+      # `AlarmEmail="${{ secrets.ALARM_EMAIL }}"` with the secret unset became
+      # the bare token `AlarmEmail=` once bash stripped the quotes, and the SAM
+      # CLI rejects an empty value outright:
+      #
+      #   Invalid value for '--parameter-overrides': AlarmEmail= is not a
+      #   valid format.
+      #
+      # It never reached AWS — hence a one-second failure and a stack that
+      # recorded no update attempt, which reads exactly like a permissions
+      # problem and is not one. `AlarmEmail` is optional by design (F9.3: unset
+      # means create the alarms, skip the email subscription), and that is a
+      # property of the *template*; the CLI has no way to express it, so the
+      # parameter has to be omitted rather than passed empty.
+      #
+      # Secrets travel through `env` for the same reason: interpolating them
+      # into the command line re-quotes them through bash, so a `$`, a quote or
+      # a backtick in a generated password breaks the argument list.
       - name: sam deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          FRONTEND_ORIGIN: ${{ secrets.FRONTEND_ORIGIN }}
+          ALARM_EMAIL: ${{ secrets.ALARM_EMAIL }}
         run: |
-          sam deploy --no-confirm-changeset --no-fail-on-empty-changeset \
-            --parameter-overrides \
-              DatabaseUrl="${{ secrets.DATABASE_URL }}" \
-              JwtAccessSecret="${{ secrets.JWT_SECRET }}" \
-              FrontendOrigin="${{ secrets.FRONTEND_ORIGIN }}" \
-              JwtAccessExpiresInSeconds="900" \
-              JwtRefreshExpiresInDays="7" \
-              S3PresignedUrlExpiresInSeconds="300" \
-              S3PresignedDownloadExpiresInSeconds="1800" \
-              AlarmEmail="${{ secrets.ALARM_EMAIL }}"
+          # Required: an empty one here is a misconfiguration worth stopping
+          # for, and stopping with a name beats SAM's parse error.
+          for required in DATABASE_URL JWT_SECRET FRONTEND_ORIGIN; do
+            if [ -z "${!required}" ]; then
+              echo "::error::Secret $required is empty; cannot deploy." >&2
+              exit 1
+            fi
+          done
+
+          overrides=(
+            "DatabaseUrl=$DATABASE_URL"
+            "JwtAccessSecret=$JWT_SECRET"
+            "FrontendOrigin=$FRONTEND_ORIGIN"
+            "JwtAccessExpiresInSeconds=900"
+            "JwtRefreshExpiresInDays=7"
+            "S3PresignedUrlExpiresInSeconds=300"
+            "S3PresignedDownloadExpiresInSeconds=1800"
+          )
+
+          # Optional: omitted entirely when unset, so the template's
+          # HasAlarmEmail condition sees its own default.
+          if [ -n "$ALARM_EMAIL" ]; then
+            overrides+=("AlarmEmail=$ALARM_EMAIL")
+          else
+            echo "ALARM_EMAIL is unset: alarms will be created without an email subscription."
+          fi
+
+          sam deploy --no-confirm-changeset --no-fail-on-empty-changeset             --parameter-overrides "${overrides[@]}"

@@ -349,7 +349,7 @@
   border: 1px solid rgba($color-priority-high, 0.4);
   border-radius: $radius-md;
   background: transparent;
-  color: $color-priority-high;
+  color: $color-priority-high-text;
   font-size: $font-size-sm;
   font-weight: $font-weight-medium;
   cursor: pointer;
@@ -432,7 +432,7 @@
   border: 1px solid rgba($color-priority-high, 0.4);
   border-radius: $radius-md;
   background: transparent;
-  color: $color-priority-high;
+  color: $color-priority-high-text;
   font-size: $font-size-sm;
   font-weight: $font-weight-medium;
   cursor: pointer;
@@ -482,6 +482,6 @@
 
 .error {
   font-size: $font-size-xs;
-  color: $color-priority-high;
+  color: $color-priority-high-text;
   margin: 0;
 }

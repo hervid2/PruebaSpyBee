@@ -196,7 +196,7 @@
 .day__badge {
   font-size: $font-size-xs;
   font-weight: $font-weight-bold;
-  color: $color-info-blue;
+  color: $color-info-blue-text;
   line-height: 1;
 }
 
@@ -340,31 +340,31 @@
 
   &--priority-high {
     background: rgba($color-priority-high, 0.12);
-    color: $color-priority-high;
+    color: $color-priority-high-text;
   }
 
   &--priority-medium {
     background: rgba($color-priority-medium, 0.12);
-    color: $color-priority-medium;
+    color: $color-priority-medium-text;
   }
 
   &--priority-low {
     background: rgba($color-priority-low, 0.12);
-    color: $color-priority-low;
+    color: $color-priority-low-text;
   }
 
   &--status-open {
     background: rgba($color-status-open, 0.12);
-    color: $color-status-open;
+    color: $color-status-open-text;
   }
 
   &--status-on_pause {
     background: rgba($color-status-paused, 0.12);
-    color: $color-status-paused;
+    color: $color-status-paused-text;
   }
 
   &--status-closed {
     background: rgba($color-status-closed, 0.1);
-    color: $color-status-closed;
+    color: $color-status-closed-text;
   }
 }

@@ -21,7 +21,7 @@
 
   &__status {
     text-align: center;
-    color: $color-text-secondary;
+    color: $color-text-secondary-on-dark;
     font-size: $font-size-sm;
   }
 
@@ -47,7 +47,7 @@
 
   &__subtitle {
     font-size: $font-size-sm;
-    color: $color-text-secondary;
+    color: $color-text-secondary-on-dark;
   }
 
   &__form {
@@ -112,7 +112,7 @@
     right: $space-sm;
     top: 50%;
     transform: translateY(-50%);
-    color: $color-text-secondary;
+    color: $color-text-secondary-on-dark;
     cursor: pointer;
     transition: color $transition-fast;
     @include focus-ring;
@@ -124,7 +124,7 @@
 
   &__error {
     font-size: $font-size-xs;
-    color: $color-priority-high;
+    color: $color-priority-high-on-dark;
   }
 
   &__server_error {

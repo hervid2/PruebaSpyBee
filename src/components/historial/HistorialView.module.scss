@@ -173,23 +173,23 @@
   &--approved,
   &--restored {
     background: rgba(52, 199, 89, 0.12);
-    color: $color-status-open;
+    color: $color-status-open-text;
   }
 
   &--updated {
     background: rgba(59, 130, 246, 0.12);
-    color: $color-info-blue;
+    color: $color-info-blue-text;
   }
 
   &--status_changed {
     background: rgba(245, 166, 35, 0.12);
-    color: $color-status-paused;
+    color: $color-status-paused-text;
   }
 
   &--rejected,
   &--deleted {
     background: rgba(229, 72, 77, 0.1);
-    color: $color-status-closed;
+    color: $color-status-closed-text;
   }
 }
 

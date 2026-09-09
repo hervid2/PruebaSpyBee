@@ -16,6 +16,10 @@ const KNOWN_CREDENTIALS: [email: string, password: string][] = [
   ['camila.rojas@flyworkflow.io', 'FlyWorkFlow2026!'],
   // create-incident.spec.ts: needs a user whose org actually has a project.
   ['diego.salazar@constructoradelvalle.com', 'FlyWorkFlow2026!'],
+  // a11y.spec.ts / performance.spec.ts (F9.7): admin of an org that actually
+  // holds data. See AUDIT_USER in those specs for why it cannot be the
+  // superadmin.
+  ['isabela.nieto@constructoradelvalle.com', 'FlyWorkFlow2026!'],
 ];
 
 export default async function globalSetup() {

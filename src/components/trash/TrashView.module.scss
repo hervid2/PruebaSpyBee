@@ -47,7 +47,7 @@
   margin: 0;
   padding: $space-sm $space-lg;
   font-size: $font-size-sm;
-  color: $color-status-closed;
+  color: $color-status-closed-text;
   background: rgba(229, 72, 77, 0.08);
   border-bottom: 1px solid $color-border;
 }
@@ -114,17 +114,17 @@
 
   &--high {
     background: rgba(229, 72, 77, 0.12);
-    color: $color-priority-high;
+    color: $color-priority-high-text;
   }
 
   &--medium {
     background: rgba(245, 166, 35, 0.12);
-    color: $color-priority-medium;
+    color: $color-priority-medium-text;
   }
 
   &--low {
     background: rgba(52, 199, 89, 0.12);
-    color: $color-priority-low;
+    color: $color-priority-low-text;
   }
 }
 

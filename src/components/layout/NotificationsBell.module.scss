@@ -95,7 +95,7 @@
 }
 
 .bell__icon--assignment {
-  color: $color-info-blue;
+  color: $color-info-blue-text;
   flex-shrink: 0;
   margin-top: 2px;
 }
@@ -107,7 +107,7 @@
 }
 
 .bell__icon--approval {
-  color: $color-status-open;
+  color: $color-status-open-text;
   flex-shrink: 0;
   margin-top: 2px;
 }

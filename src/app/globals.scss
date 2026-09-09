@@ -10,7 +10,7 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: #f2b705;
+    background: $color-accent-gold;
     border: 2.5px solid white;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     display: flex;
@@ -32,7 +32,7 @@
     outline: none;
 
     .incident-marker__ring {
-      outline: 2px solid #f2b705;
+      outline: 2px solid $color-accent-gold;
       outline-offset: 3px;
     }
   }
@@ -81,7 +81,7 @@
 
   &__code {
     font-size: 11px;
-    color: #8a8f98;
+    color: $color-text-secondary;
     margin: 0 0 4px;
     font-weight: 500;
   }
@@ -89,7 +89,7 @@
   &__title {
     font-size: 14px;
     font-weight: 600;
-    color: #1f2125;
+    color: $color-text-primary;
     margin: 0 0 10px;
     line-height: 1.35;
   }
@@ -109,14 +109,14 @@
     font-weight: 500;
 
     &--status {
-      background: #f4f5f7;
-      color: #1f2125;
+      background: $color-bg-muted;
+      color: $color-text-primary;
     }
   }
 
   &__assignees {
     font-size: 12px;
-    color: #8a8f98;
+    color: $color-text-secondary;
     margin: 0 0 10px;
     white-space: nowrap;
     overflow: hidden;
@@ -127,7 +127,7 @@
     display: inline-block;
     font-size: 12px;
     font-weight: 500;
-    color: #3b82f6;
+    color: $color-info-blue-text;
     text-decoration: none;
 
     &:hover {
@@ -135,7 +135,7 @@
     }
 
     &:focus-visible {
-      outline: 2px solid #3b82f6;
+      outline: 2px solid $color-info-blue;
       outline-offset: 2px;
       border-radius: 2px;
     }
@@ -147,12 +147,12 @@
   border-radius: 8px !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
   padding: 12px 14px !important;
-  border: 1px solid #e2e4e8;
+  border: 1px solid $color-border;
   min-width: 200px;
 }
 
 .mapboxgl-popup-close-button {
-  color: #8a8f98;
+  color: $color-text-secondary;
   font-size: 18px;
   padding: 4px 8px;
   line-height: 1;
@@ -161,8 +161,8 @@
   right: 6px;
 
   &:hover {
-    background: #f4f5f7;
-    color: #1f2125;
+    background: $color-bg-muted;
+    color: $color-text-primary;
   }
 }
 

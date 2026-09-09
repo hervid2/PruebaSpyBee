@@ -109,27 +109,27 @@
 
   &--priority-high {
     background: rgba(229, 72, 77, 0.1);
-    color: #e5484d;
+    color: $color-priority-high-text;
     border-color: rgba(229, 72, 77, 0.25);
   }
   &--priority-medium {
     background: rgba(245, 166, 35, 0.1);
-    color: #f5a623;
+    color: $color-priority-medium-text;
     border-color: rgba(245, 166, 35, 0.25);
   }
   &--priority-low {
     background: rgba(52, 199, 89, 0.1);
-    color: #34c759;
+    color: $color-priority-low-text;
     border-color: rgba(52, 199, 89, 0.25);
   }
   &--status-open {
     background: rgba(52, 199, 89, 0.1);
-    color: #34c759;
+    color: $color-priority-low-text;
     border-color: rgba(52, 199, 89, 0.25);
   }
   &--status-on_pause {
     background: rgba(245, 166, 35, 0.1);
-    color: #f5a623;
+    color: $color-priority-medium-text;
     border-color: rgba(245, 166, 35, 0.25);
   }
   &--status-closed {
@@ -139,17 +139,17 @@
   }
   &--approval-pending {
     background: rgba(245, 166, 35, 0.1);
-    color: #f5a623;
+    color: $color-priority-medium-text;
     border-color: rgba(245, 166, 35, 0.25);
   }
   &--approval-approved {
     background: rgba(52, 199, 89, 0.1);
-    color: #34c759;
+    color: $color-priority-low-text;
     border-color: rgba(52, 199, 89, 0.25);
   }
   &--approval-rejected {
     background: rgba(229, 72, 77, 0.1);
-    color: #e5484d;
+    color: $color-priority-high-text;
     border-color: rgba(229, 72, 77, 0.25);
   }
   &--type {
@@ -328,7 +328,7 @@
   border: 1px solid rgba(52, 199, 89, 0.4);
   border-radius: $radius-md;
   background: transparent;
-  color: #34c759;
+  color: $color-priority-low-text;
   font-size: $font-size-sm;
   font-weight: $font-weight-medium;
   cursor: pointer;

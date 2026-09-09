@@ -25,10 +25,19 @@ import AccessRestricted from '@/components/ui/AccessRestricted';
 import styles from './InviteCollaboratorsModal.module.scss';
 
 export default function InviteCollaboratorsModal() {
-  const t = useTranslations('invitar');
   const activeModal = useModalStore((s) => s.activeModal);
-  const close = useModalStore((s) => s.close);
   const isOpen = activeModal === 'invite-collaborators';
+
+  // Shell/content split (F9.7): AnimatePresence stays mounted so the exit
+  // transition still plays, while the content below mounts fresh on each open.
+  // Its initial state is then the state the modal should open in, which is what
+  // the on-open effect used to have to arrange after the first render.
+  return <AnimatePresence>{isOpen && <InviteCollaboratorsModalContent />}</AnimatePresence>;
+}
+
+function InviteCollaboratorsModalContent() {
+  const t = useTranslations('invitar');
+  const close = useModalStore((s) => s.close);
 
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
@@ -41,33 +50,44 @@ export default function InviteCollaboratorsModal() {
   const [copied, setCopied] = useState(false);
 
   const [invitations, setInvitations] = useState<Invitation[]>([]);
-  const [loadingList, setLoadingList] = useState(false);
+  // Starts loading only when there is going to be a fetch: a non-admin sees
+  // the access-restricted panel instead of the list, and a spinner that never
+  // resolves is exactly what a blanket `useState(true)` would give them.
+  const [loadingList, setLoadingList] = useState(isAdmin);
   const [revokingId, setRevokingId] = useState<string | null>(null);
 
   const emailInputRef = useRef<HTMLInputElement>(null);
   const { overlay, panel } = useDialogMotion();
 
   useEffect(() => {
-    if (!isOpen || !isAdmin) return;
-    setLoadingList(true);
+    if (!isAdmin) return;
+    let cancelled = false;
     listInvitations()
-      .then(setInvitations)
-      .catch(() => setInvitations([]))
-      .finally(() => setLoadingList(false));
-  }, [isOpen, isAdmin]);
+      .then((list) => {
+        if (!cancelled) setInvitations(list);
+      })
+      .catch(() => {
+        if (!cancelled) setInvitations([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingList(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin]);
 
   useEffect(() => {
-    if (isOpen && isAdmin) emailInputRef.current?.focus();
-  }, [isOpen, isAdmin]);
+    if (isAdmin) emailInputRef.current?.focus();
+  }, [isAdmin]);
 
   useEffect(() => {
-    if (!isOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') close();
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [isOpen, close]);
+  }, [close]);
 
   const handleClose = () => {
     setJustCreated(null);
@@ -125,125 +145,121 @@ export default function InviteCollaboratorsModal() {
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          className={styles.overlay}
-          variants={overlay}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
-          role="dialog"
-          aria-modal="true"
-          aria-label={t('ariaLabel')}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) handleClose();
-          }}
-        >
-          <motion.div className={styles.modal} variants={panel}>
-            <div className={styles.header}>
-              <h3>{t('title')}</h3>
-              <button
-                type="button"
-                className={styles.close}
-                onClick={handleClose}
-                aria-label={t('close')}
-              >
-                <X size={16} />
-              </button>
-            </div>
+    <motion.div
+      className={styles.overlay}
+      variants={overlay}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      role="dialog"
+      aria-modal="true"
+      aria-label={t('ariaLabel')}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleClose();
+      }}
+    >
+      <motion.div className={styles.modal} variants={panel}>
+        <div className={styles.header}>
+          <h3>{t('title')}</h3>
+          <button
+            type="button"
+            className={styles.close}
+            onClick={handleClose}
+            aria-label={t('close')}
+          >
+            <X size={16} />
+          </button>
+        </div>
 
-            <div className={styles.body}>
-              {!isAdmin ? (
-                <AccessRestricted title={t('forbiddenTitle')} message={t('forbiddenMessage')} />
-              ) : (
-                <>
-                  <p className={styles.intro}>{t('intro')}</p>
+        <div className={styles.body}>
+          {!isAdmin ? (
+            <AccessRestricted title={t('forbiddenTitle')} message={t('forbiddenMessage')} />
+          ) : (
+            <>
+              <p className={styles.intro}>{t('intro')}</p>
 
-                  <form className={styles['create-row']} onSubmit={handleCreate}>
-                    <input
-                      ref={emailInputRef}
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder={t('emailPlaceholder')}
-                      aria-label={t('emailAriaLabel')}
-                      required
-                    />
-                    <select
-                      value={role}
-                      onChange={(e) => setRole(e.target.value as InvitationRole)}
-                      aria-label={t('roleAriaLabel')}
-                    >
-                      <option value="member">{t('roleMember')}</option>
-                      <option value="admin">{t('roleAdmin')}</option>
-                    </select>
-                    <button type="submit" disabled={creating || !email.trim()}>
-                      {creating ? t('generating') : t('generate')}
-                    </button>
-                  </form>
+              <form className={styles['create-row']} onSubmit={handleCreate}>
+                <input
+                  ref={emailInputRef}
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder={t('emailPlaceholder')}
+                  aria-label={t('emailAriaLabel')}
+                  required
+                />
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as InvitationRole)}
+                  aria-label={t('roleAriaLabel')}
+                >
+                  <option value="member">{t('roleMember')}</option>
+                  <option value="admin">{t('roleAdmin')}</option>
+                </select>
+                <button type="submit" disabled={creating || !email.trim()}>
+                  {creating ? t('generating') : t('generate')}
+                </button>
+              </form>
 
-                  {createError && (
-                    <p className={styles.error} role="alert">
-                      {createError}
-                    </p>
-                  )}
-
-                  {justCreated?.inviteUrl && (
-                    <div className={styles['link-panel']} role="status">
-                      <p className={styles['link-panel__label']}>{t('linkReady')}</p>
-                      <div className={styles['link-panel__row']}>
-                        <input type="text" readOnly value={justCreated.inviteUrl} />
-                        <button type="button" onClick={handleCopy} aria-label={t('copyLink')}>
-                          {copied ? <Check size={14} /> : <Copy size={14} />}
-                          {copied ? t('copied') : t('copy')}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className={styles.list} role="list" aria-label={t('listAriaLabel')}>
-                    {loadingList ? (
-                      <p className={styles.empty}>{t('loading')}</p>
-                    ) : invitations.length === 0 ? (
-                      <p className={styles.empty}>{t('empty')}</p>
-                    ) : (
-                      invitations.map((inv) => (
-                        <div key={inv.id} className={styles.item} role="listitem">
-                          <div className={styles.item__info}>
-                            <span className={styles.item__email}>{inv.email}</span>
-                            <span className={styles.item__meta}>
-                              {inv.role === 'admin' ? t('roleAdmin') : t('roleMember')} ·{' '}
-                              {inv.status === 'accepted'
-                                ? t('statusAccepted')
-                                : inv.status === 'revoked'
-                                  ? t('statusRevoked')
-                                  : inv.expired
-                                    ? t('statusExpired')
-                                    : t('statusPending')}
-                            </span>
-                          </div>
-                          {inv.status === 'pending' && !inv.expired && (
-                            <button
-                              type="button"
-                              className={styles.item__revoke}
-                              onClick={() => handleRevoke(inv.id)}
-                              disabled={revokingId === inv.id}
-                              aria-label={t('revoke', { email: inv.email })}
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </>
+              {createError && (
+                <p className={styles.error} role="alert">
+                  {createError}
+                </p>
               )}
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+
+              {justCreated?.inviteUrl && (
+                <div className={styles['link-panel']} role="status">
+                  <p className={styles['link-panel__label']}>{t('linkReady')}</p>
+                  <div className={styles['link-panel__row']}>
+                    <input type="text" readOnly value={justCreated.inviteUrl} />
+                    <button type="button" onClick={handleCopy} aria-label={t('copyLink')}>
+                      {copied ? <Check size={14} /> : <Copy size={14} />}
+                      {copied ? t('copied') : t('copy')}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className={styles.list} role="list" aria-label={t('listAriaLabel')}>
+                {loadingList ? (
+                  <p className={styles.empty}>{t('loading')}</p>
+                ) : invitations.length === 0 ? (
+                  <p className={styles.empty}>{t('empty')}</p>
+                ) : (
+                  invitations.map((inv) => (
+                    <div key={inv.id} className={styles.item} role="listitem">
+                      <div className={styles.item__info}>
+                        <span className={styles.item__email}>{inv.email}</span>
+                        <span className={styles.item__meta}>
+                          {inv.role === 'admin' ? t('roleAdmin') : t('roleMember')} ·{' '}
+                          {inv.status === 'accepted'
+                            ? t('statusAccepted')
+                            : inv.status === 'revoked'
+                              ? t('statusRevoked')
+                              : inv.expired
+                                ? t('statusExpired')
+                                : t('statusPending')}
+                        </span>
+                      </div>
+                      {inv.status === 'pending' && !inv.expired && (
+                        <button
+                          type="button"
+                          className={styles.item__revoke}
+                          onClick={() => handleRevoke(inv.id)}
+                          disabled={revokingId === inv.id}
+                          aria-label={t('revoke', { email: inv.email })}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }

@@ -7,7 +7,7 @@
  * instead of the table.
  */
 import { getAuditLog } from '@/services/audit-log.service';
-import { ApiError } from '@/lib/api-client';
+import { nullIfForbidden } from '@/lib/api-client';
 import { firstParam, parsePageParam } from '@/lib/search-params';
 import HistorialView from '@/components/historial/HistorialView';
 import HistorialForbidden from '@/components/historial/HistorialForbidden';
@@ -24,20 +24,15 @@ export default async function HistorialPage({ searchParams }: PageProps<'/histor
   const projectId = firstParam(params.projectId);
   const userId = firstParam(params.userId);
 
-  try {
-    const auditLog = await getAuditLog({ page, projectId, userId });
-    return (
-      <HistorialView
-        entries={auditLog.items}
-        total={auditLog.total}
-        page={auditLog.page}
-        pageSize={auditLog.pageSize}
-      />
-    );
-  } catch (err) {
-    if (err instanceof ApiError && err.status === 403) {
-      return <HistorialForbidden />;
-    }
-    throw err;
-  }
+  const auditLog = await nullIfForbidden(getAuditLog({ page, projectId, userId }));
+  if (!auditLog) return <HistorialForbidden />;
+
+  return (
+    <HistorialView
+      entries={auditLog.items}
+      total={auditLog.total}
+      page={auditLog.page}
+      pageSize={auditLog.pageSize}
+    />
+  );
 }

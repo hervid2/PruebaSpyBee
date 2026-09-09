@@ -61,17 +61,28 @@ Parameters:
       parameter rather than something a deploy flips by accident.
   MaxConcurrency:
     Type: Number
-    Default: 5
-    MinValue: 1
+    Default: 0
+    MinValue: 0
     Description: >
-      Hard ceiling on simultaneously running Lambda instances (F9.4). Two
-      separate limits depend on it. Postgres: every cold start can open its
-      own connection, and Railway's free tier runs out of them long before
-      Lambda's default account-wide concurrency of 1000 would (roadmap.md
-      §Risks). Rate limiting: `@nestjs/throttler` counts in each instance's
-      own memory, with no shared store, so the API's real ceiling is
-      APP_THROTTLE_LIMIT x running instances — unbounded concurrency means an
-      unbounded rate limit, and this is what turns it back into a number.
+      Hard ceiling on simultaneously running Lambda instances (F9.4), or 0 to
+      set none. Two separate limits depend on it. Postgres: every cold start
+      can open its own connection, and Railway's free tier runs out of them
+      long before Lambda's default account-wide concurrency of 1000 would
+      (roadmap.md §Risks). Rate limiting: `@nestjs/throttler` counts in each
+      instance's own memory, with no shared store, so the API's real ceiling
+      is APP_THROTTLE_LIMIT x running instances — unbounded concurrency means
+      an unbounded rate limit, and this is what turns it back into a number.
+
+      Defaults to 0 because reserving concurrency is not always possible.
+      Lambda requires at least 10 of an account's concurrency to stay
+      unreserved, and a new account's entire quota *is* 10, so any reservation
+      at all is refused with "decreases account's UnreservedConcurrentExecution
+      below its minimum value of [10]" — which is what blocked every deploy of
+      this stack until it was found. Nothing is lost by leaving it unset on
+      such an account: the ceiling still exists, it is just the account quota
+      (10) rather than this number, so both limits above still hold, with the
+      rate limit landing at 1000 req/min instead of 500. Set this once the
+      account's concurrency quota is comfortably above 10 + the value.
   AlarmEmail:
     Type: String
     Default: ''
@@ -85,6 +96,10 @@ Conditions:
   # SNS rejects an empty Endpoint, so the subscription (not the topic, and not
   # the alarms) is what gets conditioned out.
   HasAlarmEmail: !Not [!Equals [!Ref AlarmEmail, '']]
+  # 0 means "reserve nothing": the property has to be absent, not zero, since
+  # ReservedConcurrentExecutions: 0 is a valid setting that throttles the
+  # function to a standstill. See MaxConcurrency's description.
+  HasReservedConcurrency: !Not [!Equals [!Ref MaxConcurrency, 0]]
 
 Globals:
   Function:
@@ -179,7 +194,8 @@ Resources:
       PackageType: Image
       Architectures:
         - x86_64
-      ReservedConcurrentExecutions: !Ref MaxConcurrency
+      ReservedConcurrentExecutions:
+        !If [HasReservedConcurrency, !Ref MaxConcurrency, !Ref 'AWS::NoValue']
       Environment:
         Variables:
           DATABASE_URL: !Ref DatabaseUrl

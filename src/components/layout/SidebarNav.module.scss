@@ -124,7 +124,7 @@
   flex-shrink: 0;
   border-radius: $radius-md;
   @include flex-center;
-  color: $color-text-secondary;
+  color: $color-text-secondary-on-dark;
   transition:
     background-color $transition-fast,
     color $transition-fast;

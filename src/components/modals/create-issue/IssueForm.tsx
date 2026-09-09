@@ -9,7 +9,7 @@
  * so this stays reasonably fresh without needing its own cache invalidation.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { useForm, Controller, type Resolver } from 'react-hook-form';
+import { useForm, useWatch, Controller, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
@@ -91,7 +91,6 @@ export default function IssueForm({ onClose }: Props) {
     register,
     handleSubmit,
     control,
-    watch,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<IssueFormValues>({
@@ -111,8 +110,14 @@ export default function IssueForm({ onClose }: Props) {
     },
   });
 
-  const coordinates = watch('coordinates');
-  const locationDescription = watch('locationDescription');
+  // `useWatch` rather than `useForm`'s `watch()` (F9.7). Both subscribe to the
+  // same two fields, but `watch` is a *function* returned by a hook, which the
+  // React Compiler cannot memoize safely — so it bails out of compiling this
+  // whole component ("Compilation Skipped: Use of incompatible library"), the
+  // one warning of the thirteen that costs something beyond style. `useWatch`
+  // is the subscription form of the same API and returns values, not a getter.
+  const coordinates = useWatch({ control, name: 'coordinates' });
+  const locationDescription = useWatch({ control, name: 'locationDescription' });
 
   // Resolve selected ids back to full objects, build the DTO, persist, then
   // (if any files were attached) upload them before closing — the modal

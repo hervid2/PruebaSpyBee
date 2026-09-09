@@ -31,37 +31,6 @@ const config = [
   },
   ...nextCoreWebVitals,
   ...nextTypescript,
-  {
-    /**
-     * Three rule families arrived with this upgrade, from the React Compiler
-     * work in `eslint-plugin-react-hooks@6` (React 19). They fire twelve times
-     * on code that predates them, and every one was read before being turned
-     * down — none is a defect:
-     *
-     *   set-state-in-effect  the SSR-hydration `useEffect(() => setMounted(true), [])`
-     *                        guard, and modals resetting their own state when
-     *                        they open before fetching.
-     *   refs                 `useIssuesStore`'s lazy store initialisation, which
-     *                        is the pattern Zustand's own docs prescribe for the
-     *                        provider/context form this app uses (README §1).
-     *   error-boundaries     two Server Components that build a fallback element
-     *                        inside a `catch`.
-     *
-     * They are worth acting on — the rules describe real cascading-render and
-     * concurrency hazards — but as `error` they would fail CI on the day the
-     * framework was upgraded, for code nobody touched. Rewriting nine
-     * components inside a framework upgrade would also make that upgrade
-     * impossible to review or revert on its own. Warnings keep them in the job
-     * log; roadmap.md F9.5 carries the follow-up. Same reasoning F9.4 used for
-     * the frontend audit gate, and it expires the same way: delete this block
-     * once the warnings are gone.
-     */
-    rules: {
-      'react-hooks/set-state-in-effect': 'warn',
-      'react-hooks/refs': 'warn',
-      'react-hooks/error-boundaries': 'warn',
-    },
-  },
 ];
 
 export default config;

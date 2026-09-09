@@ -2,7 +2,7 @@
 /**
  * Global top bar: brand, current project name, language switcher, the user menu
  * and the logout action. Reads the session from the auth store and gates
- * user-specific UI behind a mounted flag to keep SSR and client markup in sync.
+ * user-specific UI behind `useIsHydrated` to keep SSR and client markup in sync.
  */
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -11,6 +11,7 @@ import { useTranslations } from 'next-intl';
 import { ChevronDown, Globe, LogOut } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useLocaleStore } from '@/store/useLocaleStore';
+import { useIsHydrated } from '@/hooks/useIsHydrated';
 import type { Locale } from '@/i18n/messages';
 import FlyIcon from '@/components/ui/FlyIcon';
 import NotificationsBell from './NotificationsBell';
@@ -26,12 +27,11 @@ export default function TopBar({ projectName = 'Proyecto Onboarding' }: TopBarPr
   const { user, isAuthenticated, logout } = useAuthStore();
   const locale = useLocaleStore((s) => s.locale);
   const setLocale = useLocaleStore((s) => s.setLocale);
-  const [mounted, setMounted] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const langMenuRef = useRef<HTMLDivElement>(null);
 
   // Avoid SSR hydration mismatch — auth state is cookie-based, only available client-side
-  useEffect(() => setMounted(true), []);
+  const mounted = useIsHydrated();
 
   useEffect(() => {
     if (!langMenuOpen) return;

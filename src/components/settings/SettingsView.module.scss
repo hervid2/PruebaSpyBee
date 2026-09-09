@@ -121,13 +121,13 @@
 
 .error {
   font-size: $font-size-xs;
-  color: $color-priority-high;
+  color: $color-priority-high-text;
   margin: 0;
 }
 
 .success {
   font-size: $font-size-xs;
-  color: $color-status-open;
+  color: $color-status-open-text;
   margin: 0;
   flex: 1;
 }

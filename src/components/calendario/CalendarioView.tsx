@@ -145,15 +145,31 @@ export default function CalendarioView() {
             </button>
           </div>
 
-          <div className={styles.grid} role="grid" aria-label={t('daysOfMonthAriaLabel')}>
+          {/*
+            `role="group"`, not `role="grid"` (F9.7). The ARIA grid pattern
+            requires grid > row > gridcell, and this is a CSS grid with the
+            cells as direct children, which axe flagged as two critical
+            violations. Adding row wrappers would have silenced it and left
+            the worse half of the problem: `grid` also promises two-dimensional
+            arrow-key navigation (WAI-ARIA APG), and every day here is a plain
+            tab stop. The role was describing a widget this is not.
+
+            Nothing is lost by dropping it, because the information was never
+            coming from the structure: each day button carries its own full
+            accessible name ("9 de septiembre: 0 incidencias"). The weekday
+            letters are decorative for the same reason -- without a real
+            row/column relationship they cannot be associated with a cell
+            anyway, and the date is already spoken in full.
+          */}
+          <div className={styles.grid} role="group" aria-label={t('daysOfMonthAriaLabel')}>
             {DAY_NAMES.map((d) => (
-              <div key={d} className={styles.colHeader} role="columnheader" aria-label={d}>
+              <div key={d} className={styles.colHeader} aria-hidden="true">
                 {d}
               </div>
             ))}
 
             {Array.from({ length: startOffset }).map((_, i) => (
-              <div key={`empty-${i}`} className={styles.empty} role="gridcell" aria-hidden="true" />
+              <div key={`empty-${i}`} className={styles.empty} aria-hidden="true" />
             ))}
 
             {days.map((day) => {
@@ -173,9 +189,10 @@ export default function CalendarioView() {
                   ]
                     .filter(Boolean)
                     .join(' ')}
-                  role="gridcell"
                   aria-label={`${format(day, "d 'de' MMMM", { locale: es })}: ${t('incidentsCount', { count })}${isSelected ? t('selectedSuffix') : ''}`}
-                  aria-selected={isSelected}
+                  // `aria-pressed`, not `aria-selected`: the latter is only
+                  // valid on roles this button no longer claims.
+                  aria-pressed={isSelected}
                   onClick={() => handleDayClick(key)}
                 >
                   <span className={styles.day__num}>{day.getDate()}</span>

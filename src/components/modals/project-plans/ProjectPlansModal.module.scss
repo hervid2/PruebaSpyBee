@@ -159,7 +159,7 @@
 
 .error {
   font-size: $font-size-sm;
-  color: $color-priority-high;
+  color: $color-priority-high-text;
   margin: 0;
 }
 
@@ -229,7 +229,7 @@
 
   &__delete {
     &:hover {
-      color: $color-priority-high;
+      color: $color-priority-high-text;
       background: rgba($color-priority-high, 0.08);
     }
     &:disabled {

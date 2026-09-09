@@ -4,7 +4,24 @@ $color-bg-surface: #ffffff;
 $color-bg-muted: #f4f5f7;
 $color-border: #e2e4e8;
 $color-text-primary: #1f2125;
-$color-text-secondary: #8a8f98;
+// Darkened from #8a8f98 in F9.7. The old value was 3.25:1 against
+// $color-bg-surface and 2.98:1 against $color-bg-muted -- below WCAG AA's
+// 4.5:1 for body text, and on the muted background below even the 3:1
+// allowed for large text. It carries every piece of secondary copy in the
+// app (154 uses), so this one token was the single largest source of
+// contrast violations. Same hue (218.6 deg) and saturation as before, only
+// darker, so the visual hierarchy against $color-text-primary survives:
+// 4.92:1 on surface, 4.51:1 on muted.
+$color-text-secondary: #6b717a;
+// Secondary text on the dark surfaces ($color-bg-dark and the #222 auth card).
+// A separate token because contrast is a property of the *pair*, not of the
+// colour: the single token this replaces had to be light enough to read on
+// #1a1a1a and dark enough to read on #ffffff, and no value is both. Darkening
+// it for the light surfaces in F9.7 is what pushed the top bar's user role to
+// 3.54:1 and made axe fail it -- the audit catching, immediately, a
+// regression the audit itself had caused. 6.60:1 on $color-bg-dark, 6.04:1 on
+// the auth card.
+$color-text-secondary-on-dark: #9aa0a8;
 $color-accent-gold: #f2b705;
 $color-accent-gold-alt: #ffc107;
 $color-status-open: #34c759;
@@ -14,6 +31,26 @@ $color-priority-high: #e5484d;
 $color-priority-medium: #f5a623;
 $color-priority-low: #34c759;
 $color-info-blue: #3b82f6;
+
+// ─── Accessible foreground variants (F9.7) ────────────────────────────────────
+// The vivid colours above are *fill* colours: dots, bars, chart series, chips,
+// left borders. As text they were never legible enough -- axe measured the
+// trash view's priority chips at 3.35:1, 1.86:1 and 2.01:1 against their own
+// 12% tint, where WCAG AA asks 4.5:1. They stay exactly as they are for fills
+// (a fill only owes 3:1, and the palette is the brand's), and text uses these
+// darkened siblings, each the lightest value of the same hue and saturation
+// that clears 4.5:1 against white, $color-bg-muted and its own 10%/12% tint.
+$color-status-open-text: #228039;
+$color-status-paused-text: #9d6407;
+$color-status-closed-text: #d31e24;
+$color-priority-high-text: #d31e24;
+$color-priority-medium-text: #9d6407;
+$color-priority-low-text: #228039;
+$color-info-blue-text: #0b63f2;
+// The mirror image, for the dark auth surfaces: there the fix is a *lighter*
+// red, not a darker one. Same reason the secondary text needed two tokens --
+// contrast belongs to the pair, not to the colour.
+$color-priority-high-on-dark: #ea696d;
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 $sidebar-width: 64px;

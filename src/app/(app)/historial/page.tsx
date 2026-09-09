@@ -7,7 +7,8 @@
  * instead of the table.
  */
 import { getAuditLog } from '@/services/audit-log.service';
-import { ApiError } from '@/lib/api-client';
+import { nullIfForbidden } from '@/lib/api-client';
+import { firstParam, parsePageParam } from '@/lib/search-params';
 import HistorialView from '@/components/historial/HistorialView';
 import HistorialForbidden from '@/components/historial/HistorialForbidden';
 
@@ -17,29 +18,21 @@ export const metadata = {
   title: 'Historial de Incidencias',
 };
 
-interface HistorialPageProps {
-  searchParams: { page?: string; projectId?: string; userId?: string };
-}
+export default async function HistorialPage({ searchParams }: PageProps<'/historial'>) {
+  const params = await searchParams;
+  const page = parsePageParam(params.page);
+  const projectId = firstParam(params.projectId);
+  const userId = firstParam(params.userId);
 
-export default async function HistorialPage({ searchParams }: HistorialPageProps) {
-  const parsedPage = Number(searchParams.page);
-  const page = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
-  const { projectId, userId } = searchParams;
+  const auditLog = await nullIfForbidden(getAuditLog({ page, projectId, userId }));
+  if (!auditLog) return <HistorialForbidden />;
 
-  try {
-    const auditLog = await getAuditLog({ page, projectId, userId });
-    return (
-      <HistorialView
-        entries={auditLog.items}
-        total={auditLog.total}
-        page={auditLog.page}
-        pageSize={auditLog.pageSize}
-      />
-    );
-  } catch (err) {
-    if (err instanceof ApiError && err.status === 403) {
-      return <HistorialForbidden />;
-    }
-    throw err;
-  }
+  return (
+    <HistorialView
+      entries={auditLog.items}
+      total={auditLog.total}
+      page={auditLog.page}
+      pageSize={auditLog.pageSize}
+    />
+  );
 }

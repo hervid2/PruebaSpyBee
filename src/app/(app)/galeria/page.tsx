@@ -5,6 +5,7 @@
  * authenticated org member can view the gallery, so there's no forbidden state.
  */
 import { getGalleryMedia } from '@/services/gallery.service';
+import { parsePageParam } from '@/lib/search-params';
 import GalleryView from '@/components/gallery/GalleryView';
 
 export const dynamic = 'force-dynamic';
@@ -13,13 +14,8 @@ export const metadata = {
   title: 'Galería',
 };
 
-interface GaleriaPageProps {
-  searchParams: { page?: string };
-}
-
-export default async function GaleriaPage({ searchParams }: GaleriaPageProps) {
-  const parsedPage = Number(searchParams.page);
-  const page = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+export default async function GaleriaPage({ searchParams }: PageProps<'/galeria'>) {
+  const page = parsePageParam((await searchParams).page);
 
   const gallery = await getGalleryMedia(page);
   return (

@@ -22,6 +22,20 @@ interface Props {
   pageSize: number;
 }
 
+/**
+ * Tiles loaded eagerly instead of lazily (F9.7). The grid is
+ * `auto-fill, minmax(160px, 1fr)`, so a desktop content column fits six or
+ * seven per row and the LCP element is always one of them. `next/image` lazy
+ * loads by default, which means the largest thing on the page waited for the
+ * intersection observer before its request even started; `priority` also
+ * preloads it in the document head. Deliberately about one row and not more —
+ * every priority image is a preload competing for the same connection, so
+ * marking the whole grid would push the real LCP element back down the queue.
+ * No layout shift either way: `.tile` is `aspect-ratio: 1`, so each cell is
+ * sized before its image arrives.
+ */
+const EAGER_TILES = 6;
+
 export default function GalleryView({ items, total, page, pageSize }: Props) {
   const t = useTranslations('galeria');
   const router = useRouter();
@@ -67,7 +81,7 @@ export default function GalleryView({ items, total, page, pageSize }: Props) {
         <p className={styles.empty}>{t('emptyGallery')}</p>
       ) : (
         <div className={styles.grid}>
-          {items.map((item) => (
+          {items.map((item, index) => (
             <button
               key={item.id}
               type="button"
@@ -80,6 +94,7 @@ export default function GalleryView({ items, total, page, pageSize }: Props) {
                 alt={item.incident.title}
                 fill
                 sizes="(max-width: 480px) 50vw, (max-width: 768px) 33vw, 200px"
+                priority={index < EAGER_TILES}
                 className={styles.tile__img}
               />
               <span className={styles.tile__typeBadge}>

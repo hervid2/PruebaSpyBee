@@ -5,6 +5,7 @@
  * so there's no forbidden state.
  */
 import { getDocumentsMedia } from '@/services/documents.service';
+import { parsePageParam } from '@/lib/search-params';
 import DocumentsView from '@/components/documents/DocumentsView';
 
 export const dynamic = 'force-dynamic';
@@ -13,13 +14,8 @@ export const metadata = {
   title: 'Documentos',
 };
 
-interface DocumentosPageProps {
-  searchParams: { page?: string };
-}
-
-export default async function DocumentosPage({ searchParams }: DocumentosPageProps) {
-  const parsedPage = Number(searchParams.page);
-  const page = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+export default async function DocumentosPage({ searchParams }: PageProps<'/documentos'>) {
+  const page = parsePageParam((await searchParams).page);
 
   const documents = await getDocumentsMedia(page);
   return (

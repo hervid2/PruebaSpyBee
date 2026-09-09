@@ -6,6 +6,7 @@
  */
 import { getTrash } from '@/services/trash.service';
 import { ApiError } from '@/lib/api-client';
+import { parsePageParam } from '@/lib/search-params';
 import TrashView from '@/components/trash/TrashView';
 import TrashForbidden from '@/components/trash/TrashForbidden';
 
@@ -15,13 +16,8 @@ export const metadata = {
   title: 'Papelera',
 };
 
-interface TrashPageProps {
-  searchParams: { page?: string };
-}
-
-export default async function TrashPage({ searchParams }: TrashPageProps) {
-  const parsedPage = Number(searchParams.page);
-  const page = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+export default async function TrashPage({ searchParams }: PageProps<'/papelera'>) {
+  const page = parsePageParam((await searchParams).page);
 
   try {
     const trash = await getTrash(page);

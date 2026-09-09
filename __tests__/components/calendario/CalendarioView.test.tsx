@@ -104,7 +104,7 @@ describe('CalendarioView — vista de calendario completo', () => {
   it('al hacer clic en un día distinto, muestra solo las incidencias de ese día', () => {
     renderCalendario();
 
-    fireEvent.click(screen.getByRole('gridcell', { name: /^5 de junio:/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^5 de junio:/ }));
 
     expect(screen.getByText('Grieta en muro')).toBeInTheDocument();
     expect(screen.queryByText('Fuga en columna hoy')).not.toBeInTheDocument();
@@ -113,7 +113,7 @@ describe('CalendarioView — vista de calendario completo', () => {
   it('un día sin incidencias es seleccionable y muestra el estado vacío', () => {
     renderCalendario();
 
-    fireEvent.click(screen.getByRole('gridcell', { name: /^20 de junio:/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^20 de junio:/ }));
 
     expect(screen.getByText('No hay incidencias registradas para este día.')).toBeInTheDocument();
   });
@@ -121,7 +121,7 @@ describe('CalendarioView — vista de calendario completo', () => {
   it('no recorta la lista de un día con muchas incidencias (a diferencia del widget)', () => {
     renderCalendario();
 
-    fireEvent.click(screen.getByRole('gridcell', { name: /^10 de junio:/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^10 de junio:/ }));
 
     busyDayIncidents.forEach((incident) => {
       expect(screen.getByText(incident.title)).toBeInTheDocument();

@@ -119,7 +119,7 @@
 .calendar__badge {
   font-size: 9px;
   font-weight: $font-weight-bold;
-  color: $color-info-blue;
+  color: $color-info-blue-text;
   line-height: 1;
 }
 
@@ -269,17 +269,17 @@
 
     &--high {
       background: rgba(229, 72, 77, 0.12);
-      color: $color-priority-high;
+      color: $color-priority-high-text;
     }
 
     &--medium {
       background: rgba(245, 166, 35, 0.12);
-      color: $color-priority-medium;
+      color: $color-priority-medium-text;
     }
 
     &--low {
       background: rgba(52, 199, 89, 0.12);
-      color: $color-priority-low;
+      color: $color-priority-low-text;
     }
   }
 
@@ -291,17 +291,17 @@
 
     &--open {
       background: rgba(52, 199, 89, 0.12);
-      color: $color-status-open;
+      color: $color-status-open-text;
     }
 
     &--on_pause {
       background: rgba(245, 166, 35, 0.12);
-      color: $color-status-paused;
+      color: $color-status-paused-text;
     }
 
     &--closed {
       background: rgba(229, 72, 77, 0.1);
-      color: $color-status-closed;
+      color: $color-status-closed-text;
     }
   }
 

@@ -20,6 +20,7 @@ vi.mock('@/services/documents.service', () => ({ getDocumentsMedia: vi.fn() }));
 vi.mock('@/services/audit-log.service', () => ({ getAuditLog: vi.fn() }));
 vi.mock('@/services/trash.service', () => ({ getTrash: vi.fn() }));
 
+import { ApiError } from '@/lib/api-client';
 import GaleriaPage from '@/app/(app)/galeria/page';
 import DocumentosPage from '@/app/(app)/documentos/page';
 import HistorialPage from '@/app/(app)/historial/page';
@@ -28,6 +29,8 @@ import { getGalleryMedia } from '@/services/gallery.service';
 import { getDocumentsMedia } from '@/services/documents.service';
 import { getAuditLog } from '@/services/audit-log.service';
 import { getTrash } from '@/services/trash.service';
+import HistorialForbidden from '@/components/historial/HistorialForbidden';
+import TrashForbidden from '@/components/trash/TrashForbidden';
 
 const emptyPage = { items: [], total: 0, page: 1, pageSize: 20 };
 
@@ -92,4 +95,41 @@ describe('/historial filters', () => {
       userId: 'user-7',
     });
   });
+});
+
+/**
+ * The role-gated pair. F9.7 moved the 403 handling out of a try/catch wrapped
+ * around the JSX (`react-hooks/error-boundaries`: React builds elements
+ * eagerly and renders them later, so such a catch never sees a render error
+ * anyway) and into `nullIfForbidden`, which narrows the block to the await.
+ * These pin the behaviour that refactor had to preserve.
+ */
+describe('role-gated pages', () => {
+  it('/historial renders the access-restricted state on a 403', async () => {
+    vi.mocked(getAuditLog).mockRejectedValue(new ApiError(403, 'Forbidden'));
+    const el = await HistorialPage({
+      searchParams: Promise.resolve({}),
+      params: Promise.resolve({}),
+    });
+    expect(el.type).toBe(HistorialForbidden);
+  });
+
+  it('/papelera renders the access-restricted state on a 403', async () => {
+    vi.mocked(getTrash).mockRejectedValue(new ApiError(403, 'Forbidden'));
+    const el = await TrashPage({
+      searchParams: Promise.resolve({}),
+      params: Promise.resolve({}),
+    });
+    expect(el.type).toBe(TrashForbidden);
+  });
+
+  it.each([500, 401])(
+    '/historial still throws on a %d — only 403 is a UI state',
+    async (status) => {
+      vi.mocked(getAuditLog).mockRejectedValue(new ApiError(status, 'Boom'));
+      await expect(
+        HistorialPage({ searchParams: Promise.resolve({}), params: Promise.resolve({}) }),
+      ).rejects.toBeInstanceOf(ApiError);
+    },
+  );
 });

@@ -5,7 +5,7 @@
  * so the server component can seed it with incidents fetched at request time,
  * avoiding a client refetch and SSR/global-singleton state bleed.
  */
-import React, { createContext, useContext, useRef } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { createStore } from 'zustand/vanilla';
 import { useStore } from 'zustand';
 import type { Incident } from '@/domain/models';
@@ -36,7 +36,18 @@ export type IssuesStoreApi = ReturnType<typeof createIssuesStore>;
 
 export const IssuesStoreContext = createContext<IssuesStoreApi | null>(null);
 
-/** Provides a single store instance to the tree, created once per mount. */
+/**
+ * Provides a single store instance to the tree, created once per mount.
+ *
+ * The store is held in `useState`'s lazy initialiser rather than the
+ * `useRef`-and-assign-on-first-render form Zustand's own docs show (F9.7).
+ * Both create the store exactly once, but the ref version has to *read*
+ * `ref.current` during render to pass it down, which `react-hooks/refs`
+ * flags: under concurrent rendering a render can be thrown away and
+ * restarted, and a ref written during render survives that discard while
+ * state does not. `useState` gives the same create-once semantics with a
+ * value the renderer actually owns.
+ */
 export function IssuesStoreProvider({
   children,
   initialIncidents,
@@ -44,11 +55,8 @@ export function IssuesStoreProvider({
   children: React.ReactNode;
   initialIncidents: Incident[];
 }) {
-  const storeRef = useRef<IssuesStoreApi | null>(null);
-  if (storeRef.current === null) {
-    storeRef.current = createIssuesStore(initialIncidents);
-  }
-  return React.createElement(IssuesStoreContext.Provider, { value: storeRef.current }, children);
+  const [store] = useState<IssuesStoreApi>(() => createIssuesStore(initialIncidents));
+  return React.createElement(IssuesStoreContext.Provider, { value: store }, children);
 }
 
 /** Selector hook; throws if used outside {@link IssuesStoreProvider}. */

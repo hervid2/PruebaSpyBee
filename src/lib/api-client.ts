@@ -80,3 +80,25 @@ export async function apiFetch<T>(
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }
+
+/**
+ * Resolves to `null` when the call is refused with a 403, and rethrows
+ * anything else.
+ *
+ * Exists so a role-gated page can pick its fallback UI *outside* the
+ * try/catch that guards the fetch (F9.7). Wrapping the JSX in the `try`
+ * instead — what `/historial` and `/papelera` used to do — is what
+ * `react-hooks/error-boundaries` flags, and correctly: React builds an
+ * element eagerly but renders it later, so a `catch` around a `return
+ * <View />` never sees the render errors it looks like it is catching, only
+ * the fetch's. Narrowing the block to the await says exactly that, and a
+ * real render error now reaches the error boundary that can handle it.
+ */
+export async function nullIfForbidden<T>(promise: Promise<T>): Promise<T | null> {
+  try {
+    return await promise;
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 403) return null;
+    throw err;
+  }
+}

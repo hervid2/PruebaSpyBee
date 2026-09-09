@@ -2,9 +2,8 @@
 /**
  * Vertical icon navigation rail. Highlights the active route from the current
  * pathname and shows the signed-in user's avatar at the top. Avatar/initials
- * render only after mount to avoid an SSR hydration mismatch (auth is cookie-based).
+ * render only once hydrated to avoid an SSR mismatch (auth is cookie-based).
  */
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -21,6 +20,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useIsHydrated } from '@/hooks/useIsHydrated';
 import FlyIcon from '@/components/ui/FlyIcon';
 import styles from './SidebarNav.module.scss';
 
@@ -62,8 +62,7 @@ export default function SidebarNav({
   const pathname = usePathname();
   const active = activeHref ?? pathname;
   const user = useAuthStore((s) => s.user);
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useIsHydrated();
 
   const avatarUrl = mounted ? user?.avatarUrl : undefined;
   const initials =

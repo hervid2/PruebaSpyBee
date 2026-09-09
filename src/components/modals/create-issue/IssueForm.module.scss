@@ -36,7 +36,7 @@
 
   &--required::after {
     content: ' *';
-    color: $color-priority-high;
+    color: $color-priority-high-text;
   }
 }
 
@@ -82,7 +82,7 @@
 
 .error {
   font-size: $font-size-xs;
-  color: $color-priority-high;
+  color: $color-priority-high-text;
   margin: 0;
 }
 

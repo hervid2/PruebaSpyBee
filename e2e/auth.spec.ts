@@ -8,6 +8,11 @@ import { loginViaCookie, loginViaUI } from './helpers/auth';
 
 test.describe('Autenticación', () => {
   test('credenciales válidas redirigen a /mapa', async ({ page, isMobile }) => {
+    // Desktop only. Each run is a real, uncached /auth/login, and the route
+    // allows five a minute per IP before blocking every login for 60 s. Run on
+    // both projects, the suite went over that budget (see e2e/global-setup.ts).
+    // The mobile session keeps its own test below, through the cached cookie.
+    test.skip(isMobile, 'form login runs once per suite: login throttle budget');
     await loginViaUI(page);
     await expect(page).toHaveURL(/\/mapa/, { timeout: 10_000 });
     // TopBar shows the logged-in user's name on desktop; on mobile only the avatar is shown
@@ -20,6 +25,8 @@ test.describe('Autenticación', () => {
     page,
     isMobile,
   }) => {
+    // Desktop only, for the same login-throttle budget as the test above.
+    test.skip(isMobile, 'form login runs once per suite: login throttle budget');
     // Not viewport-dependent (same assertions regardless of screen size), so
     // it only runs under one project — see the mobile describe block below
     // for why real (uncached) logins aren't duplicated across projects: this

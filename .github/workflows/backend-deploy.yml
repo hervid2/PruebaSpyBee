@@ -109,6 +109,15 @@ jobs:
             "JwtRefreshExpiresInDays=7"
             "S3PresignedUrlExpiresInSeconds=300"
             "S3PresignedDownloadExpiresInSeconds=1800"
+            # Passed even though both match the template defaults. On a stack
+            # that already exists, a parameter left out of the overrides keeps
+            # the value stored on the stack rather than the template default.
+            # A failed update stored MaxConcurrency=5, and it kept coming back
+            # after the default was changed to 0 -- the default only governs a
+            # stack's first deploy. So every parameter the template declares
+            # is set here, and none is left to whatever the last attempt wrote.
+            "MaxConcurrency=0"
+            "EnableApiDocs=false"
           )
 
           # Optional: omitted entirely when unset, so the template's

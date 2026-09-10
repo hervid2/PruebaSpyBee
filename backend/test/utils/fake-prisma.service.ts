@@ -1166,28 +1166,6 @@ export class FakePrismaService {
       const incident = this.incidents.find((i) => i.id === where.id);
       return Promise.resolve(incident ? this.hydrateIncident(incident) : null);
     },
-    /**
-     * Only the shape `nextSequenceId` uses (F9.5): newest first, ties broken
-     * by `sequenceId`, projected down to that one column. Sorting here mirrors
-     * the real `orderBy: [{ createdAt: 'desc' }, { sequenceId: 'desc' }]`
-     * rather than accepting arbitrary orderings this store cannot honour.
-     */
-    findFirst: ({
-      where,
-    }: {
-      where?: FakeIncidentWhere;
-      orderBy?: unknown;
-      select?: unknown;
-    }): Promise<{ sequenceId: string } | null> => {
-      const [newest] = this.incidents
-        .filter((i) => this.matchesIncidentWhere(i, where))
-        .sort(
-          (a, b) =>
-            b.createdAt.getTime() - a.createdAt.getTime() ||
-            b.sequenceId.localeCompare(a.sequenceId),
-        );
-      return Promise.resolve(newest ? { sequenceId: newest.sequenceId } : null);
-    },
     create: ({
       data,
     }: {

@@ -6,10 +6,34 @@
  * a nonce and can only be built per request, in `middleware.ts`.
  */
 
-/** Where the browser is allowed to reach: our own API, and Mapbox's tile/style/telemetry endpoints. */
+/**
+ * Where the browser is allowed to reach: our own API, Mapbox's
+ * tile/style/telemetry endpoints, and the media bucket.
+ *
+ * The bucket is here because attachments and project plans upload as a browser
+ * `fetch` PUT to a presigned S3 URL, and `connect-src` is the directive that
+ * governs `fetch`. This list shipped without it in F9.4, when `img-src` already
+ * allowed `https:` for *displaying* media and the bucket looked covered. But
+ * showing an image and PUTting a file are different directives, and every
+ * browser upload was refused by the policy. Nothing caught it, because no
+ * end-to-end spec uploads a file.
+ *
+ * Named exactly from `NEXT_PUBLIC_MEDIA_HOST` (F9.6), the host the SDK actually
+ * signs for, rather than `https://*.amazonaws.com`: a wildcard would let an
+ * injected script send data to any bucket on AWS, which is also why
+ * `remotePatterns` in `next.config.mjs` pins it. Unset (local dev, CI), nothing
+ * is added.
+ */
 function connectSources(): string[] {
   const api = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-  return ["'self'", api, 'https://api.mapbox.com', 'https://events.mapbox.com'];
+  const mediaHost = process.env.NEXT_PUBLIC_MEDIA_HOST;
+  return [
+    "'self'",
+    api,
+    'https://api.mapbox.com',
+    'https://events.mapbox.com',
+    ...(mediaHost ? [`https://${mediaHost}`] : []),
+  ];
 }
 
 /**

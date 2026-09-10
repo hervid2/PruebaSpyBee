@@ -4,7 +4,7 @@
  * easy to weaken by accident — so the directives that carry the weight are
  * asserted by name rather than left to a visual read of the module.
  */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { buildContentSecurityPolicy } from '@/lib/security-headers';
 
 /** Splits the header value back into `directive -> sources`. */
@@ -52,10 +52,40 @@ describe('buildContentSecurityPolicy', () => {
     expect(prod['default-src']).toEqual(["'self'"]);
   });
 
-  it('reaches only our own API and Mapbox', () => {
+  it('reaches our own API and Mapbox', () => {
     expect(prod['connect-src']).toContain("'self'");
     expect(prod['connect-src']).toContain('https://api.mapbox.com');
     expect(prod['connect-src']).toContain('https://events.mapbox.com');
+  });
+
+  /**
+   * Uploads are a browser `fetch` PUT straight to a presigned S3 URL, so the
+   * bucket has to be in `connect-src`. From F9.4 on it was not, and the test
+   * above used to be titled "reaches only our own API and Mapbox": the defect
+   * written down as the requirement. The first real upload in production died
+   * in the browser on a CSP violation.
+   */
+  it('reaches the media bucket by its exact host, so browser uploads are allowed', () => {
+    vi.stubEnv('NEXT_PUBLIC_MEDIA_HOST', 'media-bucket.s3.us-east-1.amazonaws.com');
+    try {
+      const csp = parse(buildContentSecurityPolicy('test-nonce', false));
+      expect(csp['connect-src']).toContain('https://media-bucket.s3.us-east-1.amazonaws.com');
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it('adds no storage host, and never a wildcard, when the media host is unset', () => {
+    vi.stubEnv('NEXT_PUBLIC_MEDIA_HOST', '');
+    try {
+      const csp = parse(buildContentSecurityPolicy('test-nonce', false));
+      const storage = csp['connect-src'].filter(
+        (source) => source.includes('.s3.') || source.includes('*'),
+      );
+      expect(storage).toEqual([]);
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it('permits the blob worker Mapbox GL builds its renderer in', () => {

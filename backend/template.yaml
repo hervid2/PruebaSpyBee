@@ -99,7 +99,10 @@ Conditions:
   # 0 means "reserve nothing": the property has to be absent, not zero, since
   # ReservedConcurrentExecutions: 0 is a valid setting that throttles the
   # function to a standstill. See MaxConcurrency's description.
-  HasReservedConcurrency: !Not [!Equals [!Ref MaxConcurrency, 0]]
+  # '0' quoted: !Ref returns a parameter as a string even when its Type is
+  # Number, so comparing it against a bare YAML 0 compares a string with a
+  # number.
+  HasReservedConcurrency: !Not [!Equals [!Ref MaxConcurrency, '0']]
 
 Globals:
   Function:

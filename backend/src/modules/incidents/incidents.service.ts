@@ -499,17 +499,34 @@ export class IncidentsService {
    * retry reads a mark the winner has since moved.
    */
   private async nextSequenceId(orgId: string): Promise<string> {
-    const latest = await this.prisma.incident.findFirst({
+    // The numeric maximum over every row in the org, soft-deleted included,
+    // because that is exactly the scope `@@unique([orgId, sequenceId])`
+    // enforces. This used to take the most recently *created* incident and
+    // add one, on the assumption that numbers are handed out in creation
+    // order. They are for anything the app creates, and are not for seeded or
+    // imported data, whose `createdAt` is historical while its numbers follow
+    // load order. In the seeded demo the newest incident of each org is #81 of
+    // 101 and #31 of 99, so every create proposed a number already taken,
+    // every retry recomputed the same one (nothing moved, because nothing
+    // ever succeeded), and POST /incidents answered 409 permanently -- the
+    // create that could never succeed F9.5 set out to remove, reintroduced by
+    // the ordering it chose.
+    //
+    // Computed here rather than with ORDER BY on the column, which is a string
+    // and stops agreeing with numeric order at five digits ('10000' < '9999'),
+    // and rather than with a raw MAX(CAST(...)), which would be the efficient
+    // form but is invisible to the fake Prisma the e2e suite runs on -- the
+    // same suite that failed to catch this. It reads every number in the org
+    // per create; switch to the raw aggregate, with a test against real
+    // Postgres, if an org ever reaches the tens of thousands.
+    const rows = await this.prisma.incident.findMany({
       where: { orgId },
-      // Newest first, because numbers are handed out in creation order.
-      // Ordering by `sequenceId` itself would be a *string* comparison, which
-      // stops agreeing with numeric order at five digits ('10000' < '9999').
-      // The secondary key only breaks ties inside a single millisecond.
-      orderBy: [{ createdAt: 'desc' }, { sequenceId: 'desc' }],
       select: { sequenceId: true },
     });
-    const parsed = Number.parseInt(latest?.sequenceId ?? '', 10);
-    const highest = Number.isFinite(parsed) ? parsed : 0;
+    const highest = rows.reduce((max, { sequenceId }) => {
+      const parsed = Number.parseInt(sequenceId, 10);
+      return Number.isFinite(parsed) && parsed > max ? parsed : max;
+    }, 0);
     return String(highest + 1).padStart(INCIDENT_SEQUENCE_ID_LENGTH, '0');
   }
 

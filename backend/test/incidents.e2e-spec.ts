@@ -203,6 +203,127 @@ describe('Incidents (e2e)', () => {
       expect((res.body as IncidentBody).sequenceId).toBe('0001');
     });
 
+    /**
+     * Regression for the high-water mark F9.5 introduced. It was read off the
+     * most recently *created* incident, on the assumption that numbers follow
+     * creation order. Seeded and imported data breaks that: historical
+     * `createdAt`, numbers in load order. The seeded demo has the newest
+     * incident of each org at #81 of 101 and #31 of 99, so every create in
+     * production proposed a number already in use, every retry recomputed it,
+     * and POST /incidents answered 409 permanently.
+     *
+     * The test above could not catch it: with a single pre-existing row, the
+     * newest row and the highest number are always the same row. These seed
+     * two rows that disagree, and assert on the number returned rather than
+     * relying on a uniqueness conflict this fake does not enforce.
+     */
+    it('numbers from the highest number, even when a lower one was created more recently', async () => {
+      const token = await loginAs(app, orgAMember, 'password123');
+      await prisma.seedIncident({
+        orgId: 'org-a',
+        projectId: projectA.id,
+        typeId: plumbingType.id,
+        ownerId: orgAMember.id,
+        title: 'Highest number, created long ago',
+        priority: 'low',
+        sequenceId: '0101',
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+      });
+      await prisma.seedIncident({
+        orgId: 'org-a',
+        projectId: projectA.id,
+        typeId: plumbingType.id,
+        ownerId: orgAMember.id,
+        title: 'Lower number, created most recently',
+        priority: 'low',
+        sequenceId: '0081',
+        createdAt: new Date('2026-06-01T00:00:00Z'),
+      });
+
+      const res = await request(app.getHttpServer())
+        .post('/incidents')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          projectId: projectA.id,
+          typeId: plumbingType.id,
+          title: 'After seeded history',
+          description: 'Must not reuse 0082',
+          priority: 'low',
+        })
+        .expect(201);
+
+      expect((res.body as IncidentBody).sequenceId).toBe('0102');
+    });
+
+    it('counts soft-deleted incidents, since the unique constraint does too', async () => {
+      const token = await loginAs(app, orgAMember, 'password123');
+      await prisma.seedIncident({
+        orgId: 'org-a',
+        projectId: projectA.id,
+        typeId: plumbingType.id,
+        ownerId: orgAMember.id,
+        title: 'In the trash, holding the highest number',
+        priority: 'low',
+        sequenceId: '0120',
+        deleted: true,
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+      });
+      await prisma.seedIncident({
+        orgId: 'org-a',
+        projectId: projectA.id,
+        typeId: plumbingType.id,
+        ownerId: orgAMember.id,
+        title: 'Active and newer',
+        priority: 'low',
+        sequenceId: '0050',
+        createdAt: new Date('2026-06-01T00:00:00Z'),
+      });
+
+      const res = await request(app.getHttpServer())
+        .post('/incidents')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          projectId: projectA.id,
+          typeId: plumbingType.id,
+          title: 'After a trashed high number',
+          description: 'Must not reuse a trashed number',
+          priority: 'low',
+        })
+        .expect(201);
+
+      expect((res.body as IncidentBody).sequenceId).toBe('0121');
+    });
+
+    it('compares numbers numerically past four digits', async () => {
+      const token = await loginAs(app, orgAMember, 'password123');
+      // As strings '9999' > '10000', which is why the column is never ordered.
+      for (const sequenceId of ['10000', '9999']) {
+        await prisma.seedIncident({
+          orgId: 'org-a',
+          projectId: projectA.id,
+          typeId: plumbingType.id,
+          ownerId: orgAMember.id,
+          title: `Incident ${sequenceId}`,
+          priority: 'low',
+          sequenceId,
+        });
+      }
+
+      const res = await request(app.getHttpServer())
+        .post('/incidents')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          projectId: projectA.id,
+          typeId: plumbingType.id,
+          title: 'Past the padding width',
+          description: 'Five digits',
+          priority: 'low',
+        })
+        .expect(201);
+
+      expect((res.body as IncidentBody).sequenceId).toBe('10001');
+    });
+
     it('rejects a projectId from another organization with 400', async () => {
       const token = await loginAs(app, orgAMember, 'password123');
 

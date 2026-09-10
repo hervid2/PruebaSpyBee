@@ -16,7 +16,10 @@ function futureDateStr(daysAhead = 7) {
 // loginViaCookie's default (camila.rojas@flyworkflow.io) is the platform
 // vendor's own superadmin, whose org has no project of its own (seed.ts) —
 // creating an incident needs a user from an org that actually has one.
-const CREATOR_EMAIL = 'diego.salazar@constructoradelvalle.com';
+// isabela.nieto rather than a plain member: any role can file an incident, and
+// sharing the account the accessibility audit already pre-warms keeps
+// global-setup at two real logins (see the budget note there).
+const CREATOR_EMAIL = 'isabela.nieto@constructoradelvalle.com';
 const CREATOR_PASSWORD = 'FlyWorkFlow2026!';
 
 test.describe('Crear Incidencia — Mapa', () => {

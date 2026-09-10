@@ -168,8 +168,24 @@
     background: rgba($color-info-blue, 0.35);
   }
 
+  // Text on days with activity (F9.7). `.day__num` is `$color-text-secondary`,
+  // which clears 4.5:1 on the default grey only: 4.14:1 on the --low tint,
+  // 3.24:1 on --mid, and white on the old solid blue 3.68:1. No audit caught
+  // it, because the current month had no activity until create-incident.spec
+  // began filing incidents dated today and handed a later axe run a tinted
+  // cell. Text on the tints goes to primary; the solid step darkens to the
+  // text-grade blue, where white holds 5.15:1 and it still tops the scale.
+  // __tests__/styles/calendar-contrast.test.ts checks every state.
+  &--low,
+  &--mid {
+    .day__num,
+    .day__badge {
+      color: $color-text-primary;
+    }
+  }
+
   &--high {
-    background: $color-info-blue;
+    background: $color-info-blue-text;
 
     .day__num,
     .day__badge {

@@ -19,6 +19,7 @@
     "e2e:db:up": "docker compose up -d --wait db",
     "e2e:db:down": "docker compose down -v",
     "generate-mock-data": "tsx scripts/generate-mock-data.ts",
+    "generate-mock-documents": "tsx scripts/generate-mock-documents.ts",
     "prepare": "husky"
   },
   "lint-staged": {

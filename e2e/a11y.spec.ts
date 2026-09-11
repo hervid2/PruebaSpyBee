@@ -33,26 +33,33 @@ import { loginViaCookie } from './helpers/auth';
  *
  * This account is an admin, so `/historial` and `/papelera` still resolve
  * rather than rendering the access-restricted panel, and its org holds 87
- * incidents, 12 of them in the trash, and 160 media rows.
+ * live incidents, 12 more in the trash, 36 documents and 238 audit log
+ * entries -- enough that every table below has rows (see `rows`).
  */
 const AUDIT_USER = 'isabela.nieto@constructoradelvalle.com';
 
 const WCAG_21_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
 /**
- * Two of these can still only be audited empty, and it is the dataset's doing
- * rather than the account's: `AuditLog` has no rows in any organization (it is
- * written by real application actions, and the seed performs none), and the
- * mock dataset behind the seed contains 251 images and 68 videos but not one
- * `document`, so `/documentos` has never had a row to render anywhere. Their
- * tables are therefore unaudited -- worth fixing in the seed, and worth
- * knowing about rather than reading a green run as broader than it is.
+ * A data cell in the three table views. Each one carries `data-label` (the
+ * mobile card layout prints it as the field name); the empty-state cell does
+ * not.
  */
-const PHASE_8_PAGES = [
-  { path: '/historial', roadmap: '8.1' },
-  { path: '/papelera', roadmap: '8.2' },
+const DATA_CELL = 'tbody td[data-label]';
+
+/**
+ * `rows` is the proof a page rendered data rather than its empty state, and it
+ * is asserted before axe runs. Until the seed gained documents and an audit
+ * trail, `/historial` and `/documentos` could only ever be audited empty -- in
+ * every environment -- and this suite was green anyway. That is the failure
+ * F9.7 already met once with the superadmin, reached a second way: a pass rate
+ * cannot say which DOM it was measured against, so the spec has to.
+ */
+const PHASE_8_PAGES: { path: string; roadmap: string; rows?: string }[] = [
+  { path: '/historial', roadmap: '8.1', rows: DATA_CELL },
+  { path: '/papelera', roadmap: '8.2', rows: DATA_CELL },
   { path: '/galeria', roadmap: '8.4' },
-  { path: '/documentos', roadmap: '8.5' },
+  { path: '/documentos', roadmap: '8.5', rows: DATA_CELL },
   { path: '/calendario', roadmap: '8.6' },
   { path: '/ajustes', roadmap: '8.8' },
 ];

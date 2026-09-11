@@ -21,15 +21,18 @@
  * people learn to re-run. The number is attached and logged every run, so the
  * trend stays visible while the assertion is quiet.
  *
- * Measured on this branch, single worker, cold image cache:
+ * Measured once the seed gained documents and an audit trail, so every table
+ * here renders rows (desktop project, single worker, cold image cache):
  *
- *   /historial  1012 ms   /papelera   352 ms   /galeria  856 ms
- *   /documentos  204 ms   /calendario 496 ms   CLS 0.0010-0.0015 everywhere
+ *   /historial   876 ms   /papelera   468 ms   /galeria  552 ms
+ *   /documentos  656 ms   /calendario 636 ms   CLS 0.0000-0.0021 in both projects
  *
- * The margin under 4 s is wide, and the one 5.2 s reading seen while building
- * this came from running both projects in parallel on a loaded laptop, not
- * from the page: `playwright.config.ts` pins `workers: 1` under CI, which is
- * the regime those numbers were taken in and the only one that gates.
+ * F9.7's first readings for /historial and /documentos were taken against
+ * empty tables. The margin under 4 s is still wide, and the one 5.2 s reading
+ * seen while building this came from running both projects in parallel on a
+ * loaded laptop, not from the page: `playwright.config.ts` pins `workers: 1`
+ * under CI, which is the regime those numbers were taken in and the only one
+ * that gates.
  */
 import { test, expect } from '@playwright/test';
 import { loginViaCookie } from './helpers/auth';
@@ -46,7 +49,8 @@ import { loginViaCookie } from './helpers/auth';
  *
  * This account is an admin, so `/historial` and `/papelera` still resolve
  * rather than rendering the access-restricted panel, and its org holds 87
- * incidents, 12 of them in the trash, and 160 media rows.
+ * live incidents, 12 more in the trash, 36 documents and 238 audit log
+ * entries.
  */
 const AUDIT_USER = 'isabela.nieto@constructoradelvalle.com';
 

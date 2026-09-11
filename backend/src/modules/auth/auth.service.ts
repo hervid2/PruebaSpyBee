@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'node:crypto';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -65,23 +66,21 @@ export class AuthService {
   ): Promise<AuthenticatedUser | null> {
     const user = await this.prisma.user.findUnique({ where: { email } });
 
-    if (!user) {
-      // Compared against a throwaway hash rather than returning immediately,
-      // so an unknown address costs the same ~200 ms as a known one. Without
-      // this, response time alone answers "does this account exist?" — which
-      // is the reconnaissance step before the attempt the lockout below is
-      // there to stop.
-      await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
-      return null;
-    }
-
-    if (user.lockedUntil && user.lockedUntil > new Date()) {
+    if (user?.lockedUntil && user.lockedUntil > new Date()) {
       throw new AccountLockedException();
     }
 
-    const matches = await bcrypt.compare(password, user.passwordHash);
-    if (!matches) {
-      await this.recordFailedLogin(user.id, user.failedLoginAttempts);
+    // An unknown address is compared against a throwaway hash rather than
+    // returned early, so it costs the same ~200 ms as a known one. Without
+    // this, response time alone answers "does this account exist?" — which
+    // is the reconnaissance step before the attempt the lockout below is
+    // there to stop.
+    const matches = await bcrypt.compare(
+      password,
+      user?.passwordHash ?? DUMMY_PASSWORD_HASH,
+    );
+    if (!user || !matches) {
+      await this.recordFailedLogin(email);
       return null;
     }
 
@@ -103,26 +102,53 @@ export class AuthService {
   }
 
   /**
-   * Counts one failed attempt against the account and locks it at the
-   * threshold (F9.5). The counter resets when the lock is set rather than
-   * when it expires, so the account comes back with a clean slate and the
-   * next `ACCOUNT_LOCKOUT_THRESHOLD` failures are needed to lock it again.
+   * Counts one failed attempt against `email` and locks the account at the
+   * threshold (F9.5).
+   *
+   * Runs for an email with no account too, and that is the point. The
+   * comparison above already costs both cases the same, but this write used
+   * to happen only when the account existed, which put a database round trip
+   * back on one side — about 160 ms, enough to answer "does this account
+   * exist?" by itself. Keyed by email, both cases now send the same single
+   * `UPDATE … RETURNING`; with no account it matches no row and Prisma
+   * reports P2025. (`updateMany` would avoid the exception, and wraps the
+   * statement in BEGIN/COMMIT — three round trips instead of one.)
+   *
+   * The increment happens in the database, and the lock is decided on the
+   * count the database returns. `previous + 1` computed here, from a row read
+   * before a ~200 ms password comparison, let concurrent failures overwrite
+   * each other — and concurrent failures from many addresses are exactly the
+   * attack this counter exists for.
+   *
+   * The counter resets when the lock is set rather than when it expires, so
+   * the account comes back with a clean slate and the next
+   * `ACCOUNT_LOCKOUT_THRESHOLD` failures are needed to lock it again.
    */
-  private async recordFailedLogin(
-    userId: string,
-    previousAttempts: number,
-  ): Promise<void> {
-    const attempts = previousAttempts + 1;
-    const locked = attempts >= ACCOUNT_LOCKOUT_THRESHOLD;
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: locked
-        ? {
-            failedLoginAttempts: 0,
-            lockedUntil: new Date(Date.now() + ACCOUNT_LOCKOUT_WINDOW_MS),
-          }
-        : { failedLoginAttempts: attempts },
-    });
+  private async recordFailedLogin(email: string): Promise<void> {
+    let attempts: number;
+    try {
+      ({ failedLoginAttempts: attempts } = await this.prisma.user.update({
+        where: { email },
+        data: { failedLoginAttempts: { increment: 1 } },
+        select: { failedLoginAttempts: true },
+      }));
+    } catch (error) {
+      if (isRecordNotFound(error)) return;
+      throw error;
+    }
+
+    // The one write the two cases do not share, made only by the attempt that
+    // locks the account — whose next attempt answers 429 and names the
+    // account anyway.
+    if (attempts >= ACCOUNT_LOCKOUT_THRESHOLD) {
+      await this.prisma.user.update({
+        where: { email },
+        data: {
+          failedLoginAttempts: 0,
+          lockedUntil: new Date(Date.now() + ACCOUNT_LOCKOUT_WINDOW_MS),
+        },
+      });
+    }
   }
 
   async login(user: AuthenticatedUser): Promise<AuthTokens> {
@@ -233,4 +259,12 @@ export class AuthService {
 
     return token;
   }
+}
+
+/** Prisma's error for an `update` whose `where` matched no row. */
+function isRecordNotFound(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === 'P2025'
+  );
 }

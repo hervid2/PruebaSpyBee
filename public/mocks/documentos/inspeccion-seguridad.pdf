@@ -1,0 +1,83 @@
+%PDF-1.4
+%âãÏÓ
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Length 870 >>
+stream
+BT
+/F2 16 Tf
+56 770 Td
+(Acta de inspección de seguridad) Tj
+/F1 9 Tf
+0 -20 Td
+(Documento de demostración con datos ficticios — generado para FlyWorkFlow.) Tj
+/F1 11 Tf
+16 TL
+0 -12 Td
+T*
+(1. Zona inspeccionada) Tj
+T*
+(Frente de trabajo y accesos indicados en la incidencia vinculada.) Tj
+T*
+() Tj
+T*
+(2. Condiciones encontradas) Tj
+T*
+(- Protección perimetral incompleta en borde de placa.) Tj
+T*
+(- Señalización de riesgo ausente en el acceso principal.) Tj
+T*
+(- Personal con elementos de protección personal completos.) Tj
+T*
+() Tj
+T*
+(3. Medidas inmediatas) Tj
+T*
+(- Suspensión de actividades en altura hasta instalar baranda.) Tj
+T*
+(- Instalación de señalización y cinta de demarcación.) Tj
+T*
+() Tj
+T*
+(4. Verificación) Tj
+T*
+(Se programa reinspección antes de reanudar actividades en la zona.) Tj
+T*
+() Tj
+T*
+(Coordinador de seguridad y salud en el trabajo) Tj
+ET
+endstream
+endobj
+7 0 obj
+<< /Title (Acta de inspección de seguridad) /Producer (FlyWorkFlow demo data) >>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000257 00000 n 
+0000000354 00000 n 
+0000000456 00000 n 
+0000001377 00000 n 
+trailer
+<< /Size 8 /Root 1 0 R /Info 7 0 R >>
+startxref
+1473
+%%EOF

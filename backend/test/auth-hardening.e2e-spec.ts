@@ -142,6 +142,16 @@ describe('Auth hardening (e2e)', () => {
       // near them.
       await login(member.email, 'correct-horse').expect(200);
     });
+
+    it('answers an unknown email with the same 401 as a wrong password', async () => {
+      // An unknown address goes through the same counter write as a real one
+      // and meets "no such row" there. That must stay a 401: letting Prisma's
+      // P2025 escape as a 500 would break sign-in for a mistyped address and
+      // make the two cases tell themselves apart again. This passed before the
+      // write was shared as well — what it guards is the catch.
+      await login('nobody@acme.test', 'correct-horse').expect(401);
+      await login(member.email, 'wrong-password').expect(401);
+    });
   });
 
   // F9.4 — refresh-token reuse detection. Rotation alone leaves a stolen

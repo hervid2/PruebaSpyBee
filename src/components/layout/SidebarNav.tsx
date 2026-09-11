@@ -10,7 +10,6 @@ import {
   Home,
   LayoutDashboard,
   Map,
-  Info,
   Clock,
   Calendar,
   Image as ImageIcon,
@@ -20,6 +19,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useModalStore } from '@/store/useModalStore';
 import { useIsHydrated } from '@/hooks/useIsHydrated';
 import FlyIcon from '@/components/ui/FlyIcon';
 import styles from './SidebarNav.module.scss';
@@ -30,14 +30,14 @@ interface NavItem {
   label: string;
 }
 
-// Primary destinations; /dashboard, /mapa, /historial, /calendario, /galeria
-// and /documentos are implemented — /informacion is still a navigational
-// placeholder for a future route.
+// Every href here must be a real route: SidebarNav.test.tsx checks each one
+// against the `page.tsx` files under `src/app`. The original UI spec also drew
+// an "Información" icon in this rail, but nothing ever defined a page for it,
+// and a link that 404s is worse than no link.
 const mainNavItems: NavItem[] = [
   { href: '/', icon: <Home size={20} />, label: 'Inicio' },
   { href: '/dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
   { href: '/mapa', icon: <Map size={20} />, label: 'Mapa' },
-  { href: '/informacion', icon: <Info size={20} />, label: 'Información' },
   { href: '/historial', icon: <Clock size={20} />, label: 'Historial' },
   { href: '/calendario', icon: <Calendar size={20} />, label: 'Calendario' },
   { href: '/galeria', icon: <ImageIcon size={20} />, label: 'Galería' },
@@ -47,7 +47,6 @@ const mainNavItems: NavItem[] = [
 const bottomNavItems: NavItem[] = [
   { href: '/papelera', icon: <Trash2 size={20} />, label: 'Papelera' },
   { href: '/ajustes', icon: <Settings size={20} />, label: 'Ajustes' },
-  { href: '/compartir', icon: <Share2 size={20} />, label: 'Compartir' },
 ];
 
 interface SidebarNavProps {
@@ -62,6 +61,7 @@ export default function SidebarNav({
   const pathname = usePathname();
   const active = activeHref ?? pathname;
   const user = useAuthStore((s) => s.user);
+  const openModal = useModalStore((s) => s.open);
   const mounted = useIsHydrated();
 
   const avatarUrl = mounted ? user?.avatarUrl : undefined;
@@ -121,6 +121,19 @@ export default function SidebarNav({
             {item.icon}
           </Link>
         ))}
+        {/* An action, not a destination: the same invite dialog the map
+            toolbar's Share button opens (roadmap 8.9). AppLayout mounts it,
+            so it works from every page rather than only from /mapa. */}
+        <button
+          type="button"
+          className={styles['sidebar__nav-item']}
+          onClick={() => openModal('invite-collaborators')}
+          aria-label="Compartir"
+          aria-haspopup="dialog"
+          title="Compartir"
+        >
+          <Share2 size={20} />
+        </button>
       </div>
 
       <div className={styles.sidebar__title} aria-hidden="true">

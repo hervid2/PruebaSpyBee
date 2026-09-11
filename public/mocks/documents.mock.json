@@ -1,0 +1,65 @@
+[
+  {
+    "slug": "acta-de-visita",
+    "title": "Acta de visita de obra",
+    "url": "/mocks/documentos/acta-de-visita.pdf",
+    "size": 1700,
+    "incidentTypes": [
+      "observation",
+      "coordination",
+      "architectural",
+      "urban_planning"
+    ]
+  },
+  {
+    "slug": "informe-estructural",
+    "title": "Informe técnico estructural",
+    "url": "/mocks/documentos/informe-estructural.pdf",
+    "size": 1803,
+    "incidentTypes": [
+      "structural",
+      "stability",
+      "foundation",
+      "masonry"
+    ]
+  },
+  {
+    "slug": "estudio-de-suelos",
+    "title": "Estudio de suelos (extracto)",
+    "url": "/mocks/documentos/estudio-de-suelos.pdf",
+    "size": 1717,
+    "incidentTypes": [
+      "soil-study",
+      "excavation"
+    ]
+  },
+  {
+    "slug": "certificado-materiales",
+    "title": "Certificado de conformidad de materiales",
+    "url": "/mocks/documentos/certificado-materiales.pdf",
+    "size": 1710,
+    "incidentTypes": [
+      "materials"
+    ]
+  },
+  {
+    "slug": "inspeccion-seguridad",
+    "title": "Acta de inspección de seguridad",
+    "url": "/mocks/documentos/inspeccion-seguridad.pdf",
+    "size": 1709,
+    "incidentTypes": [
+      "safety_hazard"
+    ]
+  },
+  {
+    "slug": "informe-redes",
+    "title": "Informe de redes técnicas",
+    "url": "/mocks/documentos/informe-redes.pdf",
+    "size": 1610,
+    "incidentTypes": [
+      "plumbing",
+      "electrical",
+      "infrastructure"
+    ]
+  }
+]

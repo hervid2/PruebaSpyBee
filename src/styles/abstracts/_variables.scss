@@ -46,7 +46,13 @@ $color-status-closed-text: #d31e24;
 $color-priority-high-text: #d31e24;
 $color-priority-medium-text: #9d6407;
 $color-priority-low-text: #228039;
-$color-info-blue-text: #0b63f2;
+// #0b63f2 until the seed gained an audit trail. Added after F9.7 for white text
+// on a blue fill, it was never measured against its own tint, where it gave
+// 4.49:1 -- and the history view's "Editada" badge, the one place that pairing
+// renders, had no row to render in until then. text-token-contrast.test.ts
+// holds every token in this block to the rule above rather than trusting it
+// was applied.
+$color-info-blue-text: #0b62f1;
 // The mirror image, for the dark auth surfaces: there the fix is a *lighter*
 // red, not a darker one. Same reason the secondary text needed two tokens --
 // contrast belongs to the pair, not to the colour.

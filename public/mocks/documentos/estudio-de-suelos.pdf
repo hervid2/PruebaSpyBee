@@ -1,0 +1,83 @@
+%PDF-1.4
+%âãÏÓ
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Length 879 >>
+stream
+BT
+/F2 16 Tf
+56 770 Td
+(Estudio de suelos \(extracto\)) Tj
+/F1 9 Tf
+0 -20 Td
+(Documento de demostración con datos ficticios — generado para FlyWorkFlow.) Tj
+/F1 11 Tf
+16 TL
+0 -12 Td
+T*
+(1. Exploración) Tj
+T*
+(Tres sondeos a percusión hasta 12 m de profundidad, con recuperación de) Tj
+T*
+(muestras alteradas cada 1,5 m y ensayo de penetración estándar.) Tj
+T*
+() Tj
+T*
+(2. Perfil estratigráfico) Tj
+T*
+(- 0,0 a 1,2 m: relleno heterogéneo con escombro.) Tj
+T*
+(- 1,2 a 6,5 m: arcilla limosa de consistencia media, humedad alta.) Tj
+T*
+(- 6,5 a 12,0 m: arena limosa densa.) Tj
+T*
+() Tj
+T*
+(3. Nivel freático) Tj
+T*
+(Detectado a 3,8 m en el sondeo 2. Considerar abatimiento en excavaciones.) Tj
+T*
+() Tj
+T*
+(4. Recomendación de cimentación) Tj
+T*
+(Pilotes preexcavados apoyados en el estrato de arena densa.) Tj
+T*
+() Tj
+T*
+(Laboratorio de geotecnia — informe de demostración) Tj
+ET
+endstream
+endobj
+7 0 obj
+<< /Title (Estudio de suelos \(extracto\)) /Producer (FlyWorkFlow demo data) >>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000257 00000 n 
+0000000354 00000 n 
+0000000456 00000 n 
+0000001386 00000 n 
+trailer
+<< /Size 8 /Root 1 0 R /Info 7 0 R >>
+startxref
+1481
+%%EOF

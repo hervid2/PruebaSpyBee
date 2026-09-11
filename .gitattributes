@@ -1,0 +1,7 @@
+# A PDF's cross-reference table records the byte offset of every object, so a
+# single rewritten line ending corrupts the whole file. Git only treats a file
+# as binary when it finds a NUL byte, and the demo PDFs under
+# public/mocks/documentos/ are plain-text PDFs without one — with
+# core.autocrlf=true, a Windows checkout would convert their LFs to CRLF and
+# shift every offset. `binary` turns off end-of-line conversion and text diffs.
+*.pdf binary

@@ -1,7 +1,9 @@
 'use client';
 /**
- * Map toolbar's "Share" button, made functional (roadmap 8.9,
- * requirements.md §1.5): generates a real invite link an admin can copy and
+ * The "Share" action — the map toolbar's button and the sidebar's
+ * "Compartir" — made functional (roadmap 8.9, requirements.md §1.5). Mounted
+ * once, in AppLayout, so either trigger works from any page. Generates a real
+ * invite link an admin can copy and
  * send, and lists/revokes the organization's pending invitations. No email is
  * sent — the backend never persists the raw token, only its hash, so the
  * generated link is shown exactly once, right after creation.

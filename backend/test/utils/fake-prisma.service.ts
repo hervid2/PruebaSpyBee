@@ -359,12 +359,38 @@ export class FakePrismaService {
       where,
       data,
     }: {
-      where: { id: string };
-      data: Partial<FakeUser>;
+      // By `id` for profile and password changes; by `email` for the login
+      // failure counter, which runs whether or not the account exists
+      // (`AuthService.recordFailedLogin`).
+      where: { id?: string; email?: string };
+      data: Omit<Partial<FakeUser>, 'failedLoginAttempts'> & {
+        failedLoginAttempts?: number | { increment: number };
+      };
+      // Accepted and ignored: returning the whole row is a superset of any
+      // selection, which is all a caller reading a selected field can observe.
+      select?: Record<string, boolean>;
     }): Promise<FakeUser> => {
-      const user = this.users.find((u) => u.id === where.id);
-      if (!user) throw new Error('User not found in fake store');
-      Object.assign(user, data);
+      const user =
+        where.email !== undefined
+          ? this.users.find((u) => u.email === where.email)
+          : this.users.find((u) => u.id === where.id);
+      if (!user) {
+        // Real Prisma's answer to an update that matched no row, which the
+        // failure counter has to tell apart from a genuine database error.
+        return Promise.reject(
+          new Prisma.PrismaClientKnownRequestError(
+            'No record was found for an update.',
+            { code: 'P2025', clientVersion: 'fake' },
+          ),
+        );
+      }
+      const { failedLoginAttempts, ...rest } = data;
+      Object.assign(user, rest);
+      if (typeof failedLoginAttempts === 'number') {
+        user.failedLoginAttempts = failedLoginAttempts;
+      } else if (failedLoginAttempts) {
+        user.failedLoginAttempts += failedLoginAttempts.increment;
+      }
       return Promise.resolve(user);
     },
     create: ({

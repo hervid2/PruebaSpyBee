@@ -2,7 +2,7 @@ import { UnauthorizedException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import type { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import type { Role } from '@prisma/client';
+import { Prisma, type Role } from '@prisma/client';
 import { AccountLockedException, AuthService } from './auth.service';
 import { ACCOUNT_LOCKOUT_THRESHOLD } from './auth.constants';
 import type { PrismaService } from '../../prisma/prisma.service';
@@ -31,10 +31,11 @@ function createPrismaMock() {
       findUnique: jest.fn((): Promise<UserRow | null> => Promise.resolve(null)),
       update: jest.fn(
         (args: {
-          where: { id: string };
-          data: Partial<UserRow>;
+          where: { id?: string; email?: string };
+          data: Record<string, unknown>;
+          select?: Record<string, boolean>;
         }): Promise<Partial<UserRow>> =>
-          Promise.resolve({ id: args.where.id, ...args.data }),
+          Promise.resolve({ ...args.where, ...args.data } as Partial<UserRow>),
       ),
     },
     refreshToken: {
@@ -73,6 +74,14 @@ function createPrismaMock() {
       >(),
     },
   };
+}
+
+/** What Prisma throws when an `update` matches no row. */
+function recordNotFound(): Prisma.PrismaClientKnownRequestError {
+  return new Prisma.PrismaClientKnownRequestError(
+    'No record was found for an update.',
+    { code: 'P2025', clientVersion: 'test' },
+  );
 }
 
 function createService(prisma: ReturnType<typeof createPrismaMock>) {
@@ -119,6 +128,7 @@ describe('AuthService', () => {
 
     it('returns null for an unknown email', async () => {
       const prisma = createPrismaMock();
+      prisma.user.update.mockRejectedValueOnce(recordNotFound());
       const { service } = createService(prisma);
 
       expect(
@@ -138,6 +148,7 @@ describe('AuthService', () => {
         failedLoginAttempts: 0,
         lockedUntil: null,
       });
+      prisma.user.update.mockResolvedValueOnce({ failedLoginAttempts: 1 });
       const { service } = createService(prisma);
 
       expect(await service.validateCredentials('a@b.com', 'wrong')).toBeNull();
@@ -350,6 +361,13 @@ describe('AuthService account lockout', () => {
     email: 'a@b.com',
   };
 
+  /** The one write every failed login makes, whether or not the account exists. */
+  const countFailure = (email: string) => ({
+    where: { email },
+    data: { failedLoginAttempts: { increment: 1 } },
+    select: { failedLoginAttempts: true },
+  });
+
   async function withUser(
     prisma: ReturnType<typeof createPrismaMock>,
     overrides: { failedLoginAttempts?: number; lockedUntil?: Date | null } = {},
@@ -362,16 +380,14 @@ describe('AuthService account lockout', () => {
     });
   }
 
-  it('counts a failed attempt against the account', async () => {
+  it('counts a failed attempt against the account, in the database', async () => {
     const prisma = createPrismaMock();
     await withUser(prisma, { failedLoginAttempts: 3 });
+    prisma.user.update.mockResolvedValueOnce({ failedLoginAttempts: 4 });
     const { service } = createService(prisma);
 
     expect(await service.validateCredentials('a@b.com', 'wrong')).toBeNull();
-    expect(prisma.user.update).toHaveBeenCalledWith({
-      where: { id: 'u1' },
-      data: { failedLoginAttempts: 4 },
-    });
+    expect(prisma.user.update.mock.calls).toEqual([[countFailure('a@b.com')]]);
   });
 
   it('locks the account once the threshold is reached', async () => {
@@ -379,11 +395,17 @@ describe('AuthService account lockout', () => {
     await withUser(prisma, {
       failedLoginAttempts: ACCOUNT_LOCKOUT_THRESHOLD - 1,
     });
+    prisma.user.update.mockResolvedValueOnce({
+      failedLoginAttempts: ACCOUNT_LOCKOUT_THRESHOLD,
+    });
     const { service } = createService(prisma);
 
     expect(await service.validateCredentials('a@b.com', 'wrong')).toBeNull();
 
-    const data = prisma.user.update.mock.calls[0][0].data as {
+    expect(prisma.user.update).toHaveBeenCalledTimes(2);
+    const lock = prisma.user.update.mock.calls[1][0];
+    expect(lock.where).toEqual({ email: 'a@b.com' });
+    const data = lock.data as {
       failedLoginAttempts: number;
       lockedUntil: Date;
     };
@@ -391,6 +413,27 @@ describe('AuthService account lockout', () => {
     // slate rather than re-locking on the first failure after it expires.
     expect(data.failedLoginAttempts).toBe(0);
     expect(data.lockedUntil.getTime()).toBeGreaterThan(Date.now());
+  });
+
+  it('locks on the count the database returns, not the one read before the password check', async () => {
+    // The row is read, bcrypt then takes ~200 ms, and only then is the
+    // counter written. Concurrent failures land inside that gap, which is
+    // precisely when a distributed attempt is doing its work: `previous + 1`
+    // computed from the earlier read let them overwrite each other, so a
+    // burst could be counted as a single failure.
+    const prisma = createPrismaMock();
+    await withUser(prisma, { failedLoginAttempts: 2 });
+    prisma.user.update.mockResolvedValueOnce({
+      failedLoginAttempts: ACCOUNT_LOCKOUT_THRESHOLD,
+    });
+    const { service } = createService(prisma);
+
+    await service.validateCredentials('a@b.com', 'wrong');
+
+    expect(prisma.user.update.mock.calls[1]?.[0].data).toMatchObject({
+      failedLoginAttempts: 0,
+      lockedUntil: expect.any(Date) as Date,
+    });
   });
 
   it('refuses a locked account without checking the password at all', async () => {
@@ -429,6 +472,7 @@ describe('AuthService account lockout', () => {
     // "does this account exist?" — the reconnaissance step that turns a
     // per-account lockout into a list of accounts worth locking.
     const prisma = createPrismaMock();
+    prisma.user.update.mockRejectedValueOnce(recordNotFound());
     const { service } = createService(prisma);
 
     const started = Date.now();
@@ -439,5 +483,43 @@ describe('AuthService account lockout', () => {
     // bcrypt comparison cannot. The bound is loose on purpose — this asserts
     // the comparison happened, not how fast this machine is.
     expect(Date.now() - started).toBeGreaterThan(5);
+  });
+
+  it('sends an unknown email through the same counter write as a known one', async () => {
+    // bcrypt already cost both paths the same, but the counter write used to
+    // happen only for a real account, which put a database round trip back
+    // on one side of the comparison — about 160 ms in production, enough to
+    // answer "does this account exist?" on its own.
+    const known = createPrismaMock();
+    await withUser(known);
+    known.user.update.mockResolvedValueOnce({ failedLoginAttempts: 1 });
+    await createService(known).service.validateCredentials('a@b.com', 'wrong');
+
+    const unknown = createPrismaMock();
+    unknown.user.update.mockRejectedValueOnce(recordNotFound());
+    expect(
+      await createService(unknown).service.validateCredentials(
+        'nobody@b.com',
+        'wrong',
+      ),
+    ).toBeNull();
+
+    expect(known.user.update.mock.calls).toEqual([[countFailure('a@b.com')]]);
+    expect(unknown.user.update.mock.calls).toEqual([
+      [countFailure('nobody@b.com')],
+    ]);
+  });
+
+  it('does not mistake a database failure for an unknown email', async () => {
+    // "No such row" is the one expected outcome of that write for an unknown
+    // address. Swallowing anything else would turn an outage into a stream of
+    // ordinary-looking 401s instead of the 5xx the F9.3 alarms watch for.
+    const prisma = createPrismaMock();
+    prisma.user.update.mockRejectedValueOnce(new Error('connection reset'));
+    const { service } = createService(prisma);
+
+    await expect(
+      service.validateCredentials('nobody@b.com', 'wrong'),
+    ).rejects.toThrow('connection reset');
   });
 });
